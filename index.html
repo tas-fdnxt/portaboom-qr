@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#101317">
+<meta name="robots" content="noindex,nofollow">
+<title>PORTABOOM QR</title>
+<meta property="og:title" content="PORTABOOM QR">
+<meta property="og:description" content="Scan the flat PORTABOOM QR and watch it rise into the PB4000.">
+<meta property="og:image" content="https://tas-fdnxt.github.io/portaboom-qr/portaboom-morph-qr.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://tas-fdnxt.github.io/portaboom-qr/portaboom-morph-qr.png">
+<style>
+:root{
+  --soft:#101317; --paper:#FFFFFF; --ink:#F4F6F9; --ink-soft:#C5CAD3;
+  --line:rgba(122,152,214,.26); --navy:#1B2A4A; --navy-deep:#0d1528;
+  --orange:#EE7202; --orange-h:#FF8A1F;
+  --sans:"Inter",-apple-system,system-ui,sans-serif;
+  --serif:"Fraunces",Georgia,serif; --mono:"JetBrains Mono",Menlo,monospace;
+  --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px); --sar:env(safe-area-inset-right,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--soft);overflow:hidden;font-family:var(--sans)}
+canvas#stage{position:fixed;inset:0;width:100%;height:100dvh;display:block;touch-action:none;background:#0d0d12}
+.vig{position:fixed;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 45%,transparent 60%,rgba(5,7,10,.45) 100%);z-index:2}
+#hud{position:fixed;inset:0;z-index:3;pointer-events:none;padding:calc(var(--sat)+12px) calc(var(--sar)+12px) calc(var(--sab)+12px) calc(var(--sal)+12px);display:flex;flex-direction:column;justify-content:space-between}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.badge{pointer-events:auto;display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:#fff;border-radius:999px;padding:8px 12px;font:800 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase}
+.brand{pointer-events:auto;display:inline-flex;align-items:center;gap:8px;background:rgba(13,21,40,.92);color:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 12px 6px 6px;text-decoration:none;max-width:min(58vw,260px);backdrop-filter:blur(10px)}
+.brand img{height:26px;background:#fff;border-radius:999px;padding:3px 7px}
+.brand span{font:700 12px/1 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dock{pointer-events:auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;width:min(100%,420px);margin:0 auto}
+.dock[hidden]{display:none !important}
+.btn{appearance:none;border:0;border-radius:999px;padding:12px 16px;font:700 13px/1 var(--sans);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 8px 28px rgba(0,0,0,.36);min-height:44px}
+.btn.primary{background:var(--orange);color:#fff}
+.btn.ghost{background:rgba(238,242,250,.92);color:var(--navy);border:1px solid var(--line)}
+.btn.on{background:var(--orange);color:#fff}
+.btn.off{background:rgba(13,21,40,.88);color:#eef2fa;border:1px solid var(--line)}
+#status{display:none;position:fixed;left:50%;transform:translateX(-50%);top:calc(var(--sat)+56px);z-index:4;pointer-events:none;font:700 11px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:#ffb84d;background:rgba(13,21,40,.88);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:999px;padding:8px 12px;max-width:90vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.scan-open #status{display:block}
+#aspect{display:none !important;position:fixed;right:12px;top:calc(var(--sat)+56px);z-index:4;pointer-events:none;font:800 11px/1 var(--sans);letter-spacing:.12em;border-radius:999px;padding:8px 10px;color:#081018;background:#18ff5a}
+#aspect[data-aspect="amber"]{background:#ffb000}
+#aspect[data-aspect="red"]{background:#ff1d12;color:#fff}
+#aspect[data-aspect="green"]{background:#18ff5a}
+#aspect[data-aspect="off"]{background:#5d6f93;color:#eef2fa}
+#stage:not([data-iqr-ready]){background:
+  radial-gradient(ellipse at 50% 38%,#1B2A4A 0%,#101317 52%,#0B0D10 100%)}
+#fail{display:none;position:fixed;inset:0;place-items:center;background:var(--soft);color:#fff;padding:28px;text-align:center;z-index:20}
+#fail.show{display:grid}
+body.showtime #liveDock,
+body.showtime #moreDock,
+body.showtime #hud,
+body.showtime #status,
+body.showtime .vig{display:none !important}
+body.showtime{background:#f4efe6}
+body.showtime canvas#stage:not([data-iqr-ready]){background:#f4efe6}
+#motionHint{display:none;position:fixed;left:50%;bottom:calc(var(--sab)+18px);transform:translateX(-50%);z-index:5;pointer-events:none;font:800 11px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:#9A3F00;background:rgba(244,239,230,.92);border:1px solid rgba(238,114,2,.35);border-radius:999px;padding:8px 12px;white-space:nowrap}
+body.motion1 #motionHint{display:block}
+body.motion1.scan-open #motionHint{display:none}
+body.motion2 #motionHint{display:block}
+body.motion2.scan-open #motionHint{display:none}
+body.motion2{background:#0d0d12}
+body.motion2 canvas#stage:not([data-iqr-ready]){background:#0d0d12}
+body.motion3 #motionHint{display:block}
+body.motion3{background:#f4efe6}
+body.motion3 canvas#stage:not([data-iqr-ready]){background:#f4efe6}
+body.morph1{background:#f4efe6}
+body.morph1 canvas#stage{background:#f4efe6}
+@media (max-width:480px){
+  .dock{gap:7px}
+  .btn{padding:12px 14px;font-size:12px;flex:1 1 calc(50% - 8px)}
+}
+</style>
+</head>
+<body class="live-scan">
+<canvas id="stage" aria-label="PORTABOOM PB4000 QR"></canvas>
+<div class="vig" aria-hidden="true"></div>
+<div id="status">Living QR · tap to scan the field</div>
+<div id="aspect" data-aspect="green">GREEN</div>
+<div id="hud">
+  <div class="row">
+    <div class="badge" id="modeBadge">Living QR</div>
+    <a class="brand" href="https://www.trafficaccess.com.au/portaboom-product/portaboom-pb4000-series/" target="_blank" rel="noopener">
+      <img src="./portaboom_logo.png" alt="PORTABOOM"><span>PB4000</span>
+    </a>
+  </div>
+  <div class="dock" id="liveDock">
+    <button class="btn on" id="lifeBtn" type="button" aria-pressed="true">Life ON</button>
+    <button class="btn primary" id="scanBtn" type="button">Tap to scan</button>
+  </div>
+  <div class="dock" id="moreDock" hidden>
+    <button class="btn ghost" id="printBtn" type="button">Print PNG</button>
+  </div>
+</div>
+<div id="fail"><div><h2>WebGL unavailable</h2><p>Open on a phone or laptop with WebGL.</p></div></div>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+}}
+</script>
+<div id="motionHint">Tap to flatten</div>
+<!-- Mode loader. No v= opens morph1: flat PORTABOOM QR, rise into the 3D field, boom cycle, then DEST. -->
+<script>
+(function () {
+  const q = new URLSearchParams(location.search);
+  // Mode when the URL has no v=.
+  const DEFAULT_V = "morph1";
+  const morph1 = q.get("v") === "morph1" || (!q.get("v") && DEFAULT_V === "morph1");
+  const motion1 = q.get("v") === "motion1";
+  const motion2 = q.get("v") === "motion2";
+  const motion3 = q.get("v") === "motion3";
+  const showtime = q.get("showtime") === "1" || q.get("v") === "preview5" || motion1 || motion2 || motion3 || morph1;
+  if (showtime) {
+    document.body.classList.add("showtime");
+    const doorBg = motion2 ? "#0d0d12" : "#f4efe6";
+    document.documentElement.style.background = doorBg;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", doorBg);
+  }
+  if (motion1) document.body.classList.add("motion1");
+  if (motion2) {
+    document.body.classList.add("motion2");
+    const hint = document.getElementById("motionHint");
+    if (hint) hint.textContent = "Auto showtime";
+  }
+  if (motion3) {
+    document.body.classList.add("motion3");
+    const hint = document.getElementById("motionHint");
+    if (hint) hint.textContent = "Living field";
+  }
+  if (morph1) document.body.classList.add("morph1");
+  const src = morph1 ? "./app.js?v=morph1" : motion3 ? "./app.js?v=motion3" : motion2 ? "./app.js?v=motion2" : motion1 ? "./app.js?v=motion1" : "./app.js?v=living10";
+  const s = document.createElement("script");
+  s.type = "module";
+  s.src = src;
+  document.body.appendChild(s);
+})();
+</script>
+</body>
+</html>
