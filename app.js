@@ -3671,6 +3671,8 @@ const MORPH1_END_MAX_W = 0.8;
 const MORPH1_SKY_TOP = "#D7E0EA";
 const MORPH1_HORIZON = "#F1ECE3";
 const MORPH1_TILE_END = "#34466B";
+/** End frame: leftmost part of the unit sits this far from the left edge (fraction of width). */
+const MORPH1_END_LEFT_MARGIN = 0.045;
 const MORPH1_GROUND = "#E3DACB";
 
 const morph1 = {
@@ -4002,6 +4004,30 @@ function morph1LensInfo() {
   return { center: box.getCenter(new THREE.Vector3()), normal: nrm.lengthSq() > 0 ? nrm.normalize() : null, box };
 }
 
+/** World-space sample of the unit's opaque geometry (optionally only under one node). */
+function morph1WorldPoints(root = boom, maxPts = 20000) {
+  const meshes = [];
+  let total = 0;
+  root.updateMatrixWorld(true);
+  root.traverse((o) => {
+    if (!o.isMesh || !o.geometry?.attributes?.position || !isVisibleInTree(o)) return;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    // Skip glow/halo cards (unlit, see-through); keep every solid part, matte or not.
+    if (mats.some((m) => m && (m.isMeshBasicMaterial || m.opacity < 0.2))) return;
+    meshes.push(o);
+    total += o.geometry.attributes.position.count;
+  });
+  const stride = Math.max(1, Math.ceil(total / maxPts));
+  const out = [];
+  for (const mesh of meshes) {
+    const pos = mesh.geometry.attributes.position;
+    for (let i = 0; i < pos.count; i += stride) {
+      out.push(new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i)).applyMatrix4(mesh.matrixWorld));
+    }
+  }
+  return out;
+}
+
 /**
  * End camera: eye at lens height, zero pitch, centred on the cabinet +
  * signal housing, distance set so that body is MORPH1_END_UNIT_H of the
@@ -4021,6 +4047,7 @@ function morph1DoorPose() {
   boom.updateMatrixWorld(true);
   const lens = morph1LensInfo();
   const body = morph1BodyBox() || m1Box(boom);
+  const unitPts = morph1WorldPoints(boom, Infinity); // every vertex: rounded corners are sparse
   // Full restore (pose, matte, env intensity) so the measuring pass never shows.
   morph1UnitPose(savedHe, savedSe);
   boom.visible = savedVis;
@@ -4045,12 +4072,22 @@ function morph1DoorPose() {
   lensY = THREE.MathUtils.clamp(lensY, 0.35, 0.42);
   const camZ = bc.z + dz;
   const target = new THREE.Vector3(bc.x, L.y, L.z);
+  // Horizontal lens shift (no yaw, no move): slide the picture so the leftmost
+  // part of the unit sits MORPH1_END_LEFT_MARGIN from the left edge, giving the
+  // boom the rest of the width.
+  let minNdc = Infinity;
+  for (const p of unitPts) {
+    const depth = camZ - p.z;
+    if (depth <= 0.01) continue;
+    minNdc = Math.min(minNdc, (p.x - bc.x) / depth / (t * aspect));
+  }
+  const shiftX = Number.isFinite(minNdc) ? Math.min(0, (2 * MORPH1_END_LEFT_MARGIN - 1) - minNdc) : 0;
   return {
     quat: new THREE.Quaternion(), // looking down -Z: zero pitch, zero yaw
     target,
     height: 2 * (camZ - L.z) * t,
     fov,
-    shiftX: 0,
+    shiftX,
     shiftY: 1 - 2 * lensY,
     aspect,
     lensY,
@@ -4127,6 +4164,35 @@ function morph1Measure() {
     out.unitLeftX = +left.x.toFixed(3);
     out.unitRightX = +right.x.toFixed(3);
     out.unitCentreX = +((left.x + right.x) / 2).toFixed(3);
+  }
+  {
+    // Whole unit (legs, wheels, housing, arm) and the arm's visible share.
+    let minX = Infinity;
+    for (const p of morph1WorldPoints(boom, Infinity)) minX = Math.min(minX, toScreen(p).x);
+    out.unitLeftMostX = +minX.toFixed(4);
+    out.shiftX = +(-morph1Cam.projectionMatrix.elements[8]).toFixed(4);
+    if (boomRig?.pivot) {
+      const arm = morph1WorldPoints(boomRig.pivot, 6000);
+      if (arm.length) {
+        let x0 = Infinity;
+        let x1 = -Infinity;
+        let zs = 0;
+        for (const p of arm) {
+          x0 = Math.min(x0, p.x);
+          x1 = Math.max(x1, p.x);
+          zs += p.z;
+        }
+        const depth = morph1Cam.position.z - zs / arm.length;
+        const tt = Math.tan(THREE.MathUtils.degToRad(morph1Cam.fov) / 2) * morph1Cam.aspect;
+        const sx = -morph1Cam.projectionMatrix.elements[8];
+        const edge = (s) => morph1Cam.position.x + (1 - s) * tt * depth; // world x at the right screen edge
+        const frac = (s) => THREE.MathUtils.clamp((Math.min(edge(s), x1) - x0) / Math.max(1e-6, x1 - x0), 0, 1);
+        out.boomPct = boomRig.shownPct;
+        out.armSpanWorld = +(x1 - x0).toFixed(3);
+        out.boomVisibleFrac = +frac(sx).toFixed(3);
+        out.boomVisibleFracNoShift = +frac(0).toFixed(3);
+      }
+    }
   }
   if (lens) {
     out.lensCentreY = +toScreen(lens.center).y.toFixed(3);
