@@ -4,7 +4,8 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { DEST, ECC, encodeDestMatrix, downloadPrintPng } from "./qr-encode.js";
 import { buildLivingQr } from "./living-qr.js";
-import { encodeTipMatrix, logoKnockout, inKnockout, logoPlacement, MORPH_PALETTE } from "./qr-url.js";
+import { encodeTipMatrix, unpackMask, MORPH_PALETTE } from "./qr-url.js";
+import { MORPH_MASK } from "./morph-mask.js";
 import {
   SHOWTIME_DEST_DEFAULT,
   parseHttpUrl,
@@ -601,7 +602,15 @@ const motion3Wanted = pageParams.get("v") === "motion3" || morph1Wanted;
 /** morph1 field matrix comes from the tip URL the still encodes, not DEST. */
 const MORPH1_TIP_URL = new URL("./?v=morph1", import.meta.url).href;
 const morph1Qr = morph1Wanted ? encodeTipMatrix(MORPH1_TIP_URL) : null;
-const morph1Ko = morph1Qr ? logoKnockout(morph1Qr.size) : null;
+/** ?m1bake=1: render the lying unit alone for the still (no knockout yet). */
+const morph1BakeMode = morph1Wanted && pageParams.get("m1bake") === "1";
+const morph1Mask = morph1Qr && !morph1BakeMode ? unpackMask(MORPH_MASK, morph1Qr.size) : null;
+if (morph1Qr && !morph1BakeMode && !morph1Mask) console.warn("morph1 unit mask missing for this grid size");
+const morph1Masked = (r, c) => !!(morph1Mask && morph1Mask[r * morph1Qr.size + c]);
+/** Lying unit length (boom up, laid along the ground) as a fraction of the symbol side. */
+const MORPH1_UNIT_SPAN = 0.85;
+/** Cuboid heights scale with the larger unit. */
+const MORPH1_HEIGHT_SCALE = 1.0;
 const hexNum = (h) => parseInt(String(h).replace("#", ""), 16);
 const showtimeWanted = pageParams.get("showtime") === "1" || preview5Wanted;
 const destParam = pageParams.get("dest");
@@ -851,7 +860,7 @@ const living = buildLivingQr(THREE, morph1Qr ? {
   dest: MORPH1_TIP_URL,
   livery: LIVERY,
   kindcol: KINDCOL,
-  skipCell: (r, c) => inKnockout(morph1Ko, r, c),
+  heightScale: MORPH1_HEIGHT_SCALE,
   capColor: hexNum(MORPH_PALETTE.navy),
   capFill: 1,
   scanPaperColor: hexNum(MORPH_PALETTE.cream),
@@ -1816,8 +1825,9 @@ function fitMotion3DoorOrtho() {
 
 function plantMotion3InField() {
   if (!boom || !motion3Wanted) return;
-  boom.position.x = MOTION3_UNIT_X;
-  boom.position.z = 0.12;
+  const m1rest = boom.userData.m1RestPos;
+  boom.position.x = m1rest ? m1rest.x : MOTION3_UNIT_X;
+  boom.position.z = m1rest ? m1rest.z : 0.12;
   boom.visible = true;
   boom.userData.livingPlanted = true;
 }
@@ -3592,8 +3602,10 @@ if (window.visualViewport) window.visualViewport.addEventListener("resize", resi
 resize();
 
 /* ------------------------------------------------------------------ *
- * morph1 timeline: flat QR (same matrix as the still) -> rise -> unit
- * -> showtime (green 0.5s, amber 1s, red 0.5s, boom down) -> DEST.
+ * morph1 timeline: frame 0 is the still (the real unit lying on its back in
+ * the middle of the QR) -> the unit hinges up while it steps back into the
+ * field, modules rise, the camera tilts to a portrait-composed eye-level
+ * shot -> showtime (green 0.5s, amber 1s, red 0.5s, boom down) -> DEST.
  * ------------------------------------------------------------------ */
 /** Minimum time the flat QR holds before it starts to rise. */
 const MORPH1_FLAT_MIN_S = 1.4;
@@ -3601,63 +3613,86 @@ const MORPH1_FLAT_MIN_S = 1.4;
 const MORPH1_UNIT_WAIT_MAX_S = 10;
 /*
  * Rise timeline (seconds from the end of the flat hold):
- *  0.0-0.6  logo fades; the unit, lying on its back with the lenses and
- *           cabinet front facing straight up at the top-down camera,
- *           comes up through the floor (0.0-0.7)
- *  0.7-3.9  the unit hinges up on its bottom-back edge to upright (3.2 s,
- *           smootherstep), the field modules rise, the camera tilts
- *  3.9      upright, then a short beat and the boom cycle
+ *  0.05-3.25 the unit hinges up on its bottom-back edge (3.2 s, ease in-out)
+ *           and slides back to its standing spot; modules ripple up
+ *  2.5-4.1  the boom arm swings up (red until it is up, then green)
+ *  0.1-3.5  camera comes down from top-down to eye level
+ *  then a short beat and the boom cycle
  */
-const MORPH1_LOGO_FADE = [0.0, 0.6];
-const MORPH1_EMERGE_S = [0.0, 0.7];
-const MORPH1_HINGE_S = [0.7, 3.9];
-/** Camera tilt from top-down to the motion3 field camera. */
-const MORPH1_TILT_S = [0.8, 3.8];
-/** Modules ripple up from the logo box outward. */
-const MORPH1_MOD_DELAY_S = 0.9;
-const MORPH1_RIPPLE_S = 0.9;
-const MORPH1_MOD_RISE_S = 1.4;
-/** Modules under the lying unit wait until the hinge has lifted it this far. */
-const MORPH1_UNDER_CLEAR = 0.72;
-const MORPH1_UNDER_RISE_S = 1.0;
+const MORPH1_HINGE_S = [0.05, 3.25];
+/** The boom arm, laid along the ground in the still, swings up once the unit is nearly upright. */
+const MORPH1_ARM_S = [2.5, 4.1];
+const MORPH1_TILT_S = [0.1, 3.5];
+const MORPH1_MOD_DELAY_S = 0.35;
+const MORPH1_RIPPLE_S = 1.0;
+const MORPH1_MOD_RISE_S = 1.3;
 /** Scan caps fade out as the cuboids come up. */
-const MORPH1_CAP_FADE = [1.6, 2.8];
+const MORPH1_CAP_FADE = [1.3, 2.5];
 /** Beat with the unit up before the boom cycle starts. */
 const MORPH1_HOLD_S = 0.35;
 /** Flat module height (fraction of full) for frame 0. */
 const MORPH1_FLAT_SCALE = 0.04;
-/** Frame 0: QR pad width as a fraction of the short screen side. */
-const MORPH1_SCAN_FRAC = 0.88;
-/** Ortho camera distance at frame 0 (top-down). */
-const MORPH1_SCAN_DIST = 8;
+/** Frame 0: QR pad width as a fraction of the screen width ... */
+const MORPH1_SCAN_FRAC = 0.9;
+/** ... capped so the "Tap to scan" button fits under the square (CSS px, matches index.html). */
+const MORPH1_BTN_SPACE = 100;
+/** Frame 0 camera: top-down, near-orthographic long lens (degrees). */
+const MORPH1_SCAN_FOV = 0.5;
+/** Ortho camera distance for the still bake (top-down). */
+const MORPH1_SCAN_DIST = 12;
+/** Simulated scan: focus brackets + scan line over the QR before the morph. */
+const MORPH1_SWEEP_S = 0.8;
+/** ?autoplay=1 starts the scan by itself (video, receipts); otherwise the page waits for a tap. */
+const morph1Autoplay = pageParams.get("autoplay") === "1";
+/** Nudge of the lying silhouette from centre, in modules (x, z). */
+const MORPH1_LYING_SHIFT = [1.6, -0.5];
+/** Where the unit stands at the end, as a fraction of the pad (negative = far side). */
+const MORPH1_STAND_Z_FRAC = -0.2;
+/*
+ * End camera: standing in front of the unit. Eye at the signal lens height,
+ * zero pitch, square on to the lenses (perspective). The frame is composed
+ * with a lens shift, not by tilting: lenses in the upper third, slightly
+ * left so the boom reads to the right, wheels low, field in front.
+ */
+const MORPH1_END_FOV_PORTRAIT = 50;
+const MORPH1_END_FOV_WIDE = 34;
+/** Lens centre on screen, from the top (fraction of height) and from the left (fraction of width). */
+const MORPH1_END_HEAD_Y = 1 / 3;
+const MORPH1_END_HEAD_X = 0.42;
+/** Wheels (bottom-front of the unit) at this fraction from the top. */
+const MORPH1_END_BASE_Y = 0.8;
 
 const morph1 = {
-  phase: morph1Wanted ? "flat" : "off", // flat | rise | hold | show
+  phase: morph1Wanted ? "flat" : "off", // flat | scan | rise | hold | show
+  scanAt: 0,
   bootAt: performance.now(),
   riseAt: 0,
   holdAt: 0,
   unitReady: false,
   unitFailed: false,
-  logoReady: false,
-  logo: null,
-  logoPlace: null,
+  restReady: false,
   scanPose: null,
   doorPose: null,
   caps: [],
   capMats: [],
   clip: new THREE.Plane(new THREE.Vector3(0, 1, 0), 0),
   clipMats: new Set(),
-  restPos: null,
+  restPos: null, // upright, at the lying pivot
   restQuat: null,
   pivot: null,
-  lyingThick: 0.5,
-  underDelay: 0,
+  slideZ: 0, // pivot travel from lying to standing
+  lyingBox: null,
+  standBox: null,
+  matte: [],
   shadow: null,
   bg: new THREE.Color(hexNum(MORPH_PALETTE.cream)),
-  ripple: [],
   marks: {},
+  riseEnd: 0,
 };
 
+/** One perspective camera for the whole morph (near-ortho at frame 0, eye level at the end). */
+const morph1Cam = new THREE.PerspectiveCamera(MORPH1_SCAN_FOV, 1, 0.05, 100);
+morph1Cam.name = "Morph1Camera";
 const _m1q = new THREE.Quaternion();
 const _m1v = new THREE.Vector3();
 const _m1t = new THREE.Vector3();
@@ -3671,35 +3706,59 @@ function m1smooth(x) {
   const u = m1clamp01(x);
   return u * u * u * (u * (u * 6 - 15) + 10);
 }
+/** Cubic ease-in-out: gets going sooner than smootherstep over a 3 s move. */
+function m1ease(x) {
+  const u = m1clamp01(x);
+  return u * u * (3 - 2 * u);
+}
 function m1outBack(x) {
   const u = m1clamp01(x);
   const k = 1.4;
   return 1 + (k + 1) * Math.pow(u - 1, 3) + k * Math.pow(u - 1, 2);
+}
+/** World box of the visible unit geometry only (the GLB carries hidden parts). */
+function m1Box(root) {
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3();
+  root.traverse((o) => {
+    if (o.isMesh && o.geometry && isVisibleInTree(o)) box.expandByObject(o);
+  });
+  return box;
+}
+function m1span(tr, w) {
+  return m1clamp01((tr - w[0]) / (w[1] - w[0]));
 }
 
 function morph1Init() {
   if (!morph1Wanted) return;
   renderer.localClippingEnabled = true;
   const n = living.n;
-  const cell = living.cell;
   // Flat ground: unlit cream scan pad, no lit paper tiles, so frame 0 matches the still.
   for (const child of grid.children) {
     if (/^QrLight_/.test(child.name || "")) child.visible = false;
   }
   if (living.pad) living.pad.visible = false;
-  morph1.caps = mods.map((m) => m.getObjectByName("QrModTop")).filter(Boolean);
+  morph1.caps = mods.filter((m) => !morph1Masked(m.userData.r, m.userData.c))
+    .map((m) => m.getObjectByName("QrModTop")).filter(Boolean);
+  for (const m of mods) {
+    if (!morph1Masked(m.userData.r, m.userData.c)) continue;
+    const cap = m.getObjectByName("QrModTop");
+    if (cap) cap.visible = false;
+  }
   morph1.capMats = living.capMats || [living.topMat];
-  // Ripple order: distance from the logo box centre.
-  const kc = morph1Ko.c0 + morph1Ko.cols / 2 - 0.5;
-  const kr = morph1Ko.r0 + morph1Ko.rows / 2 - 0.5;
+  // Ripple order: distance from the symbol centre.
+  const kc = (n - 1) / 2;
   let maxD = 1;
   for (const m of mods) {
-    const d = Math.hypot(m.userData.c - kc, m.userData.r - kr);
+    const d = Math.hypot(m.userData.c - kc, m.userData.r - kc);
     m.userData.m1d = d;
     if (d > maxD) maxD = d;
   }
   for (const m of mods) {
+    // Cells under the lying unit are blank in the still; they fill in once the unit lifts off.
+    m.userData.m1masked = morph1Masked(m.userData.r, m.userData.c);
     m.userData.m1delay = MORPH1_MOD_DELAY_S + (m.userData.m1d / maxD) * MORPH1_RIPPLE_S;
+    m.userData.m1start = m.userData.m1delay;
     m.scale.y = MORPH1_FLAT_SCALE;
   }
   // Soft contact shadows once the field stands up.
@@ -3709,114 +3768,137 @@ function morph1Init() {
   );
   shadow.name = "Morph1Shadow";
   shadow.rotation.x = -Math.PI / 2;
-  shadow.position.y = cell * 0.005;
+  shadow.position.y = living.cell * 0.005;
   shadow.receiveShadow = true;
   shadow.visible = false;
   grid.add(shadow);
   morph1.shadow = shadow;
-  // Stacked PORTABOOM logo in the knockout, same box as the still.
-  new THREE.TextureLoader().load(
-    new URL("./portaboom-stacked.png", import.meta.url).href,
-    (tex) => {
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.anisotropy = 8;
-      const img = tex.image;
-      const aspect = (img.naturalWidth || img.width) / (img.naturalHeight || img.height);
-      const place = logoPlacement(morph1Ko, aspect);
-      morph1.logoPlace = place;
-      const mesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(place.w * cell, place.h * cell),
-        new THREE.MeshBasicMaterial({
-          map: tex,
-          transparent: true,
-          depthWrite: false,
-          toneMapped: false,
-        })
-      );
-      mesh.name = "Morph1Logo";
-      mesh.rotation.x = -Math.PI / 2;
-      mesh.position.set(
-        (place.x + place.w / 2 - n / 2) * cell,
-        cell * 0.004,
-        (place.y + place.h / 2 - n / 2) * cell
-      );
-      mesh.renderOrder = 2;
-      grid.add(mesh);
-      morph1.logo = mesh;
-      morph1.logoReady = true;
-    },
-    undefined,
-    (err) => {
-      console.warn("morph1 logo failed", err);
-      morph1.logoReady = true;
-    }
-  );
   morph1PrepareUnit(boom);
+  const scanBtn = document.getElementById("morph1Scan");
+  if (scanBtn) scanBtn.addEventListener("click", () => morph1Tap());
+  if (window.__morph1ScanQueued) morph1.scanQueued = true;
   addEventListener("resize", morph1Resize);
   if (window.visualViewport) window.visualViewport.addEventListener("resize", morph1Resize);
   morph1Resize();
 }
 
+function morph1ViewSize() {
+  return {
+    w: Math.max(1, canvas.clientWidth || innerWidth),
+    h: Math.max(1, canvas.clientHeight || innerHeight),
+  };
+}
+
+/** QR square side on screen in CSS px: same rule as --m1q in index.html. */
+function morph1PadPx() {
+  const { w, h } = morph1ViewSize();
+  return Math.max(80, Math.min(w * MORPH1_SCAN_FRAC, h - 2 * MORPH1_BTN_SPACE));
+}
+
+/** Top-down frame 0: the pad is the --m1q square, centred. */
 function morph1ScanPose() {
-  const w = Math.max(1, canvas.clientWidth || innerWidth);
-  const h = Math.max(1, canvas.clientHeight || innerHeight);
-  const aspect = w / h;
-  let worldW;
-  let worldH;
-  if (aspect < 1) {
-    worldW = living.padSize / MORPH1_SCAN_FRAC;
-    worldH = worldW / aspect;
-  } else {
-    worldH = living.padSize / MORPH1_SCAN_FRAC;
-    worldW = worldH * aspect;
-  }
-  const probe = new THREE.OrthographicCamera();
-  probe.position.set(0, MORPH1_SCAN_DIST, 0.0001);
+  const { w, h } = morph1ViewSize();
+  const worldH = (living.padSize / morph1PadPx()) * h;
+  const probe = new THREE.PerspectiveCamera(); // cameras look down their -Z
+  probe.position.set(0, 10, 0.0001);
   probe.up.set(0, 0, -1);
   probe.lookAt(0, 0, 0);
   return {
     quat: probe.quaternion.clone(),
     target: new THREE.Vector3(0, 0, 0),
-    dist: MORPH1_SCAN_DIST,
-    left: -worldW / 2,
-    right: worldW / 2,
-    top: worldH / 2,
-    bottom: -worldH / 2,
+    height: worldH,
+    fov: MORPH1_SCAN_FOV,
+    shiftX: 0,
+    shiftY: 0,
+    aspect: w / h,
   };
 }
 
-/** The motion3 field camera with the unit at its final pose. */
+/** Square ortho top-down frustum with the pad filling it (still bake). */
+function morph1BakeFrustum() {
+  const half = living.padSize / 2;
+  const probe = new THREE.OrthographicCamera(-half, half, half, -half, 0.05, 80);
+  probe.position.set(0, MORPH1_SCAN_DIST, 0.0001);
+  probe.up.set(0, 0, -1);
+  probe.lookAt(0, 0, 0);
+  probe.updateProjectionMatrix();
+  return probe;
+}
+
+/** World centre and facing of the signal lenses (average lens surface normal). */
+function morph1LensInfo() {
+  const head = boom ? findSignalHead(boom) : null;
+  if (!head) return null;
+  head.updateMatrixWorld(true);
+  const box = new THREE.Box3();
+  const nrm = new THREE.Vector3();
+  const nm = new THREE.Matrix3();
+  const v = new THREE.Vector3();
+  let any = false;
+  head.traverse((o) => {
+    if (!o.isMesh || !isVisibleInTree(o)) return;
+    if (!/HeroLens|SignalLens|Lens_|灯罩/i.test(ancestorBlob(o))) return;
+    box.union(new THREE.Box3().setFromObject(o));
+    const na = o.geometry?.attributes?.normal;
+    if (na) {
+      nm.getNormalMatrix(o.matrixWorld);
+      for (let i = 0; i < na.count; i += 1) nrm.add(v.fromBufferAttribute(na, i).applyMatrix3(nm).normalize());
+    }
+    any = true;
+  });
+  if (!any) {
+    const lb = doorSignalLanternBox();
+    if (!lb || lb.isEmpty()) return null;
+    return { center: lb.getCenter(new THREE.Vector3()), normal: null, box: lb };
+  }
+  return { center: box.getCenter(new THREE.Vector3()), normal: nrm.lengthSq() > 0 ? nrm.normalize() : null, box };
+}
+
+/**
+ * End camera: eye at lens height, zero pitch, looking straight at the lens
+ * faces (the unit front faces +Z when upright). Distance puts the wheels at
+ * MORPH1_END_BASE_Y; a lens shift places the lenses in the upper third.
+ */
 function morph1DoorPose() {
-  if (!boom) return null;
+  if (!boom || !morph1.restReady) return null;
+  const { w, h } = morph1ViewSize();
+  const aspect = w / h;
   const savedPos = boom.position.clone();
   const savedQuat = boom.quaternion.clone();
   const savedVis = boom.visible;
-  if (morph1.restPos) {
-    boom.position.copy(morph1.restPos);
-    boom.quaternion.copy(morph1.restQuat);
-  } else {
-    boom.position.y = boom.userData.restY ?? savedPos.y;
-  }
+  const savedArm = boomRig ? boomRig.shownPct : null;
+  morph1UnitPose(1, 1);
+  if (boomRig) applyBoomShown(0);
   boom.visible = true;
   boom.updateMatrixWorld(true);
-  lockMotion3Camera();
-  const look = doorCam.userData.look
-    ? doorCam.userData.look.clone()
-    : doorCam.position.clone().add(new THREE.Vector3(0, 0, -1).applyQuaternion(doorCam.quaternion));
-  const pose = {
-    quat: doorCam.quaternion.clone(),
-    target: look,
-    dist: doorCam.position.distanceTo(look),
-    left: doorCam.left,
-    right: doorCam.right,
-    top: doorCam.top,
-    bottom: doorCam.bottom,
-  };
+  const lens = morph1LensInfo();
+  const unitBox = m1Box(boom);
   boom.position.copy(savedPos);
   boom.quaternion.copy(savedQuat);
   boom.visible = savedVis;
+  if (boomRig && savedArm != null) applyBoomShown(savedArm);
   boom.updateMatrixWorld(true);
-  return pose;
+  const L = lens ? lens.center : unitBox.getCenter(new THREE.Vector3());
+  const fov = aspect < 1 ? MORPH1_END_FOV_PORTRAIT : MORPH1_END_FOV_WIDE;
+  const t = Math.tan(THREE.MathUtils.degToRad(fov) / 2);
+  const shiftY = 1 - 2 * MORPH1_END_HEAD_Y; // NDC of the lens centre
+  const shiftX = 2 * MORPH1_END_HEAD_X - 1;
+  const baseNdc = 1 - 2 * MORPH1_END_BASE_Y;
+  // Wheels: bottom-front of the standing unit.
+  const zFront = unitBox.max.z;
+  const yBase = unitBox.min.y;
+  const depthBase = (L.y - yBase) / ((shiftY - baseNdc) * t);
+  const camZ = zFront + depthBase;
+  const dist = camZ - L.z;
+  return {
+    quat: new THREE.Quaternion(), // looking down -Z, zero pitch, zero yaw
+    target: L.clone(),
+    height: 2 * dist * t,
+    fov,
+    shiftX,
+    shiftY,
+    aspect,
+  };
 }
 
 function morph1Resize() {
@@ -3829,27 +3911,61 @@ function morph1ApplyCamera(u) {
   const a = morph1.scanPose;
   const b = morph1.doorPose || a;
   if (!a) return;
-  const e = m1smooth(u);
+  const e = m1ease(u);
+  // Long lens -> normal lens late in the move, so the top-down frame stays flat.
+  const ef = Math.pow(e, 1.6);
+  const lg = (x, y, k) => Math.exp(THREE.MathUtils.lerp(Math.log(x), Math.log(y), k));
   _m1q.slerpQuaternions(a.quat, b.quat, e);
   _m1t.lerpVectors(a.target, b.target, e);
-  const dist = THREE.MathUtils.lerp(a.dist, b.dist, e);
+  const fov = lg(a.fov, b.fov, ef);
+  const height = lg(a.height, b.height, e);
+  const dist = height / (2 * Math.tan(THREE.MathUtils.degToRad(fov) / 2));
   _m1v.set(0, 0, 1).applyQuaternion(_m1q).multiplyScalar(dist);
-  doorCam.position.copy(_m1t).add(_m1v);
-  doorCam.quaternion.copy(_m1q);
-  doorCam.left = THREE.MathUtils.lerp(a.left, b.left, e);
-  doorCam.right = THREE.MathUtils.lerp(a.right, b.right, e);
-  doorCam.top = THREE.MathUtils.lerp(a.top, b.top, e);
-  doorCam.bottom = THREE.MathUtils.lerp(a.bottom, b.bottom, e);
-  doorCam.near = 0.05;
-  doorCam.far = 80;
-  doorCam.updateProjectionMatrix();
-  camera = doorCam;
+  morph1Cam.position.copy(_m1t).add(_m1v);
+  morph1Cam.quaternion.copy(_m1q);
+  morph1Cam.fov = fov;
+  morph1Cam.aspect = morph1ViewSize().w / morph1ViewSize().h;
+  morph1Cam.near = Math.max(0.05, dist - 40);
+  morph1Cam.far = dist + 60;
+  morph1Cam.updateProjectionMatrix();
+  // Lens shift (off-axis frustum): moves the picture, never tilts the camera.
+  const sx = THREE.MathUtils.lerp(a.shiftX, b.shiftX, e);
+  const sy = THREE.MathUtils.lerp(a.shiftY, b.shiftY, e);
+  morph1Cam.projectionMatrix.elements[8] = -sx;
+  morph1Cam.projectionMatrix.elements[9] = -sy;
+  morph1Cam.projectionMatrixInverse.copy(morph1Cam.projectionMatrix).invert();
+  morph1Cam.updateMatrixWorld(true);
+  camera = morph1Cam;
+}
+
+/** Final-frame geometry check: camera pitch/yaw and lens normal vs view direction. */
+function morph1Measure() {
+  const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(morph1Cam.quaternion);
+  const lens = morph1LensInfo();
+  const out = {
+    phase: morph1.phase,
+    cameraPitchDeg: +THREE.MathUtils.radToDeg(Math.asin(THREE.MathUtils.clamp(fwd.y, -1, 1))).toFixed(2),
+    cameraYawDeg: +THREE.MathUtils.radToDeg(Math.atan2(fwd.x, -fwd.z)).toFixed(2),
+    cameraFovDeg: +morph1Cam.fov.toFixed(2),
+    cameraPos: morph1Cam.position.toArray().map((x) => +x.toFixed(3)),
+  };
+  if (lens) {
+    const toLens = lens.center.clone().sub(morph1Cam.position).normalize();
+    out.lensCenter = lens.center.toArray().map((x) => +x.toFixed(3));
+    out.cameraHeightMinusLensHeight = +(morph1Cam.position.y - lens.center.y).toFixed(4);
+    out.viewRayToLensVsForwardDeg = +THREE.MathUtils.radToDeg(toLens.angleTo(fwd)).toFixed(2);
+    if (lens.normal) {
+      out.lensNormal = lens.normal.toArray().map((x) => +x.toFixed(3));
+      out.lensNormalVsViewDeg = +THREE.MathUtils.radToDeg(lens.normal.angleTo(fwd.clone().negate())).toFixed(2);
+      out.lensNormalVsRayDeg = +THREE.MathUtils.radToDeg(lens.normal.angleTo(toLens.clone().negate())).toFixed(2);
+    }
+  }
+  return out;
 }
 
 /**
- * Attach the y = 0 clip plane once (one shader compile while the unit is
- * hidden). Turning it "off" later only moves the plane far below the
- * field, so no material recompiles mid-sequence.
+ * Attach the y = 0 clip plane once. Turning it "off" later only moves the
+ * plane far below the field, so no material recompiles mid-sequence.
  */
 function morph1SetClip(root, on) {
   if (!root) return;
@@ -3869,73 +3985,208 @@ function morph1SetClip(root, on) {
 /** Called for the stand-in and again when the GLB mounts. */
 function morph1PrepareUnit(root) {
   if (!morph1Wanted || !root) return;
-  if (root.userData.restY == null) root.userData.restY = root.position.y;
   if (morph1.phase === "flat" || morph1.phase === "rise") morph1SetClip(root, true);
 }
 
 function morph1UnitReady() {
   morph1.unitReady = true;
+  morph1CaptureRest();
   morph1PrepareUnit(boom);
-  if (morph1.phase === "flat") {
-    morph1.doorPose = morph1DoorPose();
+  morph1Resize();
+}
+
+/** Glossy paint mirrors the white room when it faces the sky; keep it satin until upright. */
+function morph1CollectMatte() {
+  morph1.matte = [];
+  const seen = new Set();
+  boom.traverse((o) => {
+    const list = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+    for (const mat of list) {
+      if (seen.has(mat) || !mat.isMeshStandardMaterial) continue;
+      seen.add(mat);
+      if (!mat.userData.m1orig) {
+        mat.userData.m1orig = {
+          rough: mat.roughness,
+          cc: mat.clearcoat ?? 0,
+          sheen: mat.sheen ?? 0,
+          spec: mat.specularIntensity ?? 1,
+          env: mat.envMapIntensity ?? 1,
+        };
+      }
+      morph1.matte.push({ mat, ...mat.userData.m1orig });
+    }
+  });
+}
+
+function morph1ApplyMatte(m) {
+  for (const it of morph1.matte) {
+    const mat = it.mat;
+    // A flat panel tipped toward the key light mirrors it straight into a
+    // camera above: kill the clearcoat and most of the specular while tipped.
+    mat.roughness = THREE.MathUtils.lerp(it.rough, Math.max(it.rough, 0.62), m);
+    mat.envMapIntensity = it.env * (1 - 0.55 * m);
+    if (mat.isMeshPhysicalMaterial) {
+      mat.clearcoat = it.cc * (1 - m);
+      mat.sheen = it.sheen * (1 - m);
+      mat.specularIntensity = it.spec * (1 - 0.8 * m);
+    }
   }
 }
 
 /**
- * Unit pose during the morph. hingeE 0 = lying on its back (front faces +Y,
- * top points to -Z, i.e. screen-up in the top-down frame), 1 = upright.
- * emergeE lifts the lying unit up through the y = 0 floor.
+ * Unit pose. hingeE 0 = lying on its back (front faces +Y, top points to -Z,
+ * screen-up in the top-down frame), 1 = upright. slideE moves the hinge
+ * pivot from the lying spot to the standing spot further into the field.
  */
-function morph1UnitPose(hingeE, emergeE) {
-  if (!boom || !morph1.restPos) return;
+function morph1UnitPose(hingeE, slideE) {
+  if (!boom || !morph1.restReady) return;
   _m1h.setFromAxisAngle(_m1x, (-Math.PI / 2) * (1 - hingeE));
   boom.quaternion.copy(_m1h).multiply(morph1.restQuat);
   _m1v.copy(morph1.restPos).sub(morph1.pivot).applyQuaternion(_m1h).add(morph1.pivot);
-  _m1v.y -= (1 - emergeE) * (morph1.lyingThick + 0.04);
+  _m1v.z += morph1.slideZ * slideE;
   boom.position.copy(_m1v);
+  const m = 1 - m1smooth((hingeE - 0.55) / 0.45);
+  morph1ApplyMatte(m);
+  scene.environmentIntensity = 0.4 + 0.6 * hingeE;
 }
 
-/** Solve smootherstep(u) = target for the under-unit module start time. */
-function m1smoothInv(target) {
-  let lo = 0;
-  let hi = 1;
-  for (let i = 0; i < 30; i += 1) {
-    const mid = (lo + hi) / 2;
-    if (m1smooth(mid) < target) lo = mid;
-    else hi = mid;
-  }
-  return (lo + hi) / 2;
+/** Arm and lamps for a rise time (frame 0: arm down, red). */
+function morph1ArmAt(tr) {
+  const a = m1smooth(m1span(tr, MORPH1_ARM_S));
+  if (boomRig) applyBoomShown(100 * a);
+  return a;
 }
 
-/** Rest pose, hinge pivot (bottom-back edge) and the lying footprint. */
+/** Decimated unit vertices for the clearance pass (about 30k points). */
+function morph1UnitPoints() {
+  const meshes = [];
+  let total = 0;
+  boom.traverse((o) => {
+    if (!o.isMesh || !o.geometry?.attributes?.position) return;
+    if (!isVisibleInTree(o)) return;
+    if (o.material && o.material.transparent && o.material.opacity < 0.2) return;
+    meshes.push(o);
+    total += o.geometry.attributes.position.count;
+  });
+  const stride = Math.max(1, Math.ceil(total / 30000));
+  return meshes.map((mesh) => {
+    const pos = mesh.geometry.attributes.position;
+    const arr = [];
+    for (let i = 0; i < pos.count; i += stride) arr.push(pos.getX(i), pos.getY(i), pos.getZ(i));
+    return { mesh, arr };
+  });
+}
+
+/**
+ * Size and place the unit: the lying silhouette (arm down along the ground)
+ * spans MORPH1_UNIT_SPAN of the symbol and is centred on the QR (the still
+ * is baked from this exact pose). Then the standing spot and per-module
+ * start times so no cuboid rises through the moving unit.
+ */
 function morph1CaptureRest() {
   if (!boom) return;
-  plantMotion3InField();
-  boom.position.y = boom.userData.restY ?? boom.position.y;
-  if (morph1.restQuat) boom.quaternion.copy(morph1.restQuat);
-  morph1.restPos = boom.position.clone();
-  morph1.restQuat = boom.quaternion.clone();
+  const n = living.n;
+  const cell = living.cell;
+  if (boom.userData.m1BaseScale == null) boom.userData.m1BaseScale = boom.scale.x;
+  const base = boom.userData.m1BaseScale;
   const vis = boom.visible;
   boom.visible = true;
-  boom.updateMatrixWorld(true);
-  const box = new THREE.Box3().setFromObject(boom);
-  morph1.pivot = new THREE.Vector3(0, box.min.y, box.min.z);
-  morph1.lyingThick = Math.max(0.1, box.max.z - box.min.z);
-  // Footprint of the unit lying flat: modules there wait for the hinge.
-  morph1UnitPose(0, 1);
-  boom.updateMatrixWorld(true);
-  const lying = new THREE.Box3().setFromObject(boom);
-  const pad = living.cell * 0.6;
-  for (const m of mods) {
-    const x = m.position.x;
-    const z = m.position.z;
-    m.userData.m1under = x > lying.min.x - pad && x < lying.max.x + pad
-      && z > lying.min.z - pad && z < lying.max.z + pad;
+  morph1ArmAt(0);
+  const place = (scale, dx, dz) => {
+    boom.rotation.set(0, boom.userData.plantedYaw ?? Math.PI, 0);
+    boom.scale.setScalar(scale);
+    boom.position.set(0, 0, 0);
+    boom.updateMatrixWorld(true);
+    const b0 = m1Box(boom);
+    boom.position.set(dx, 0.02 - b0.min.y, dz);
+    boom.updateMatrixWorld(true);
+    const box = m1Box(boom);
+    morph1.restPos = boom.position.clone();
+    morph1.restQuat = boom.quaternion.clone();
+    morph1.pivot = new THREE.Vector3(0, box.min.y, box.min.z);
+    morph1.slideZ = 0;
+    morph1.restReady = true;
+    morph1UnitPose(0, 0);
+    boom.updateMatrixWorld(true);
+    return { upright: box, lying: m1Box(boom) };
+  };
+  morph1.matte = [];
+  let m = place(base, 0, 0);
+  const lsz = m.lying.getSize(new THREE.Vector3());
+  const k = (MORPH1_UNIT_SPAN * n * cell) / Math.max(0.1, lsz.x, lsz.z);
+  m = place(base * k, 0, 0);
+  const lc = m.lying.getCenter(new THREE.Vector3());
+  m = place(base * k, -lc.x + MORPH1_LYING_SHIFT[0] * cell, -lc.z + MORPH1_LYING_SHIFT[1] * cell);
+  morph1.unitScale = k;
+  morph1.lyingBox = m.lying;
+  const T = m.upright.max.z - m.upright.min.z;
+  // Standing spot further into the field so the field fills the foreground.
+  const standZ = MORPH1_STAND_Z_FRAC * living.padSize;
+  morph1.slideZ = standZ - morph1.pivot.z;
+  const final = morph1.restPos.clone();
+  final.z += morph1.slideZ;
+  boom.userData.m1RestPos = final;
+  morph1.finalPos = final;
+  morph1CollectMatte();
+
+  // Clearance: sample the real unit geometry through the rise and note, per
+  // cell, the last time any part of it is below the cuboid tops.
+  const pts = morph1UnitPoints();
+  const modTop = 0.36 * MORPH1_HEIGHT_SCALE + cell * 0.6;
+  const steps = 72;
+  const t0 = MORPH1_HINGE_S[0];
+  const t1 = MORPH1_ARM_S[1];
+  const lastBusy = new Float32Array(n * n).fill(-1);
+  const finalBusy = new Uint8Array(n * n);
+  const v = new THREE.Vector3();
+  const origin = (n - 1) / 2;
+  const mark = (x, z, tr, fin) => {
+    for (const ox of [-0.45, 0.45]) {
+      for (const oz of [-0.45, 0.45]) {
+        const c = Math.round((x + ox * cell) / cell + origin);
+        const r = Math.round((z + oz * cell) / cell + origin);
+        if (c < 0 || r < 0 || c >= n || r >= n) continue;
+        const idx = r * n + c;
+        if (tr > lastBusy[idx]) lastBusy[idx] = tr;
+        if (fin) finalBusy[idx] = 1;
+      }
+    }
+  };
+  for (let i = 0; i <= steps + 1; i += 1) {
+    const fin = i === steps + 1;
+    const tr = fin ? t1 : t0 + (i / steps) * (t1 - t0);
+    const he = m1ease(m1span(tr, MORPH1_HINGE_S));
+    morph1UnitPose(he, he);
+    morph1ArmAt(fin ? MORPH1_ARM_S[0] : tr); // final: arm down too (showtime lowers it)
+    boom.updateMatrixWorld(true);
+    for (const { mesh, arr } of pts) {
+      const mw = mesh.matrixWorld;
+      for (let q = 0; q < arr.length; q += 3) {
+        v.set(arr[q], arr[q + 1], arr[q + 2]).applyMatrix4(mw);
+        if (v.y < modTop) mark(v.x, v.z, tr, fin);
+      }
+    }
   }
-  morph1.underDelay = MORPH1_HINGE_S[0]
-    + m1smoothInv(MORPH1_UNDER_CLEAR) * (MORPH1_HINGE_S[1] - MORPH1_HINGE_S[0]);
-  morph1.lyingBox = lying;
+  let latest = 0;
+  for (const mod of mods) {
+    const idx = mod.userData.r * n + mod.userData.c;
+    mod.userData.m1stay = !!finalBusy[idx];
+    mod.userData.m1start = mod.userData.m1delay;
+    if (mod.userData.m1stay) continue;
+    if (lastBusy[idx] >= 0) {
+      mod.userData.m1start = Math.max(mod.userData.m1delay, lastBusy[idx] + 0.1);
+      latest = Math.max(latest, mod.userData.m1start);
+    }
+  }
+  morph1UnitPose(1, 1);
+  morph1ArmAt(MORPH1_ARM_S[1]);
+  boom.updateMatrixWorld(true);
+  morph1.standBox = m1Box(boom);
+  morph1.uprightDepth = T;
+  morph1.riseEnd = Math.max(MORPH1_TILT_S[1], MORPH1_HINGE_S[1], MORPH1_ARM_S[1],
+    MORPH1_MOD_DELAY_S + MORPH1_RIPPLE_S + MORPH1_MOD_RISE_S, latest + MORPH1_MOD_RISE_S * 0.8);
   morph1UnitPose(0, 0);
+  morph1ArmAt(0);
   boom.visible = vis;
   boom.updateMatrixWorld(true);
 }
@@ -3945,8 +4196,7 @@ function morph1StartRise() {
   morph1.riseAt = performance.now();
   morph1.marks.riseAt = morph1.riseAt - morph1.bootAt;
   morph1.marks.unit = usingGlb ? "glb" : "stand-in";
-  if (boomRig) applyBoomShown(100);
-  morph1CaptureRest();
+  if (!morph1.restReady) morph1CaptureRest();
   morph1.doorPose = morph1DoorPose();
   for (const mat of morph1.capMats) {
     mat.transparent = true;
@@ -3961,29 +4211,75 @@ function morph1FinishRise() {
   morph1.phase = "hold";
   morph1.holdAt = performance.now();
   morph1.marks.unitUpAt = morph1.holdAt - morph1.bootAt;
-  for (const m of mods) m.scale.y = 1;
+  for (const m of mods) {
+    m.scale.y = m.userData.m1stay ? MORPH1_FLAT_SCALE : 1;
+    m.visible = !(m.userData.m1stay && m.userData.m1masked);
+  }
   for (const cap of morph1.caps) cap.visible = false;
   for (const mat of morph1.capMats) {
     mat.opacity = 1;
     mat.transparent = false;
     mat.needsUpdate = true;
   }
-  if (morph1.logo) morph1.logo.visible = false;
-  if (boom && morph1.restPos) {
-    boom.position.copy(morph1.restPos);
-    boom.quaternion.copy(morph1.restQuat);
-  }
+  morph1UnitPose(1, 1);
+  morph1ArmAt(MORPH1_ARM_S[1]);
+  setSignalAspect("green");
   morph1SetClip(boom, false);
 }
 
+/** Button or a tap on the QR: run the simulated scan, then the morph. */
 function morph1Tap() {
-  // A tap on the flat frame starts the rise early once the unit is loaded.
-  if (morph1.phase === "flat" && morph1.logoReady && (morph1.unitReady || morph1.unitFailed)) {
-    morph1StartRise();
+  if (morph1.phase !== "flat") return;
+  if (!(morph1.unitReady || morph1.unitFailed) || !morph1.restReady) {
+    morph1.scanQueued = true;
+    return;
+  }
+  morph1BeginScan();
+}
+
+function morph1BeginScan() {
+  morph1.phase = "scan";
+  morph1.scanAt = performance.now();
+  morph1.scanQueued = false;
+  morph1.marks.scanAt = morph1.scanAt - morph1.bootAt;
+  document.body.classList.add("morph1-scanning");
+  const btn = document.getElementById("morph1Scan");
+  if (btn) {
+    btn.classList.add("pressed");
+    btn.setAttribute("aria-disabled", "true");
+  }
+  try {
+    if (navigator.vibrate) navigator.vibrate([18, 40, 28]);
+  } catch (err) {
+    // vibration is optional
   }
 }
 
-function morph1Look(flatLook) {
+/** Sweep overlay driven from the frame clock (so a fixed-clock render captures it). */
+function morph1ScanFx(p) {
+  const fx = document.getElementById("morph1ScanFx");
+  const btn = document.getElementById("morph1Scan");
+  if (btn) {
+    if (p > 0.18) btn.classList.remove("pressed");
+    btn.style.opacity = String(1 - m1clamp01((p - 0.1) / 0.35));
+    if (p >= 1) btn.hidden = true;
+  }
+  if (!fx) return;
+  const fadeIn = m1clamp01(p / 0.12);
+  const fadeOut = 1 - m1clamp01((p - 0.85) / 0.15);
+  fx.style.opacity = String(fadeIn * fadeOut);
+  const side = fx.clientHeight || 1;
+  const y = m1smooth(m1clamp01((p - 0.08) / 0.8)) * side;
+  const line = fx.querySelector(".line");
+  const glow = fx.querySelector(".glow");
+  if (line) line.style.transform = `translateY(${y.toFixed(1)}px)`;
+  if (glow) glow.style.transform = `translateY(calc(${y.toFixed(1)}px - 100%))`;
+  const k = 1.06 - 0.06 * m1smooth(p / 0.25);
+  for (const br of fx.querySelectorAll(".br")) br.style.transform = `scale(${k.toFixed(4)})`;
+  if (p >= 1) document.body.classList.remove("morph1-scanning");
+}
+
+function morph1Look() {
   scanOpen = false;
   viewMode = "door";
   studioGroup.visible = false;
@@ -3995,84 +4291,97 @@ function morph1Look(flatLook) {
   if (brandBack) brandBack.visible = false;
   scene.background = morph1.bg;
   renderer.setClearColor(morph1.bg, 1);
-  if (flatLook) {
-    renderer.toneMapping = THREE.NoToneMapping;
-    renderer.toneMappingExposure = 1;
-  } else {
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.12;
+  // One tone mapping for the whole run: caps, pad and background are untone-mapped
+  // flat colours, so the unit never pops when the rise starts.
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.12;
+}
+
+function morph1FlatFrame() {
+  morph1Look();
+  for (const m of mods) {
+    m.scale.y = MORPH1_FLAT_SCALE;
+    m.position.y = 0;
+    m.rotation.y = 0;
+    m.visible = !m.userData.m1masked;
   }
+  for (const cap of morph1.caps) cap.visible = true;
+  if (boom) {
+    boom.visible = morph1.restReady;
+    if (morph1.restReady) morph1UnitPose(0, 0);
+  }
+  morph1ArmAt(0);
+  setSignalAspect("red");
+  morph1ApplyCamera(0);
 }
 
 function morph1Tick(dt, t) {
   if (!morph1Wanted) return;
   const now = performance.now();
   if (morph1.phase === "flat") {
-    morph1Look(true);
-    for (const m of mods) {
-      m.scale.y = MORPH1_FLAT_SCALE;
-      m.position.y = 0;
-      m.rotation.y = 0;
-    }
-    for (const cap of morph1.caps) cap.visible = true;
-    if (boom) boom.visible = false;
-    if (morph1.logo) {
-      morph1.logo.visible = true;
-      morph1.logo.material.opacity = 1;
-    }
-    morph1ApplyCamera(0);
-    // Hand over from the HTML still to the WebGL flat frame once one frame with the logo has rendered.
-    if (morph1.logoReady && (morph1.liveFrames = (morph1.liveFrames || 0) + 1) === 2) {
-      document.body.classList.add("morph1-live");
-    }
+    morph1FlatFrame();
     const elapsed = (now - morph1.bootAt) / 1000;
     const unitOk = morph1.unitReady || morph1.unitFailed || elapsed >= MORPH1_UNIT_WAIT_MAX_S;
-    if (morph1.logoReady && unitOk && elapsed >= MORPH1_FLAT_MIN_S && !window.__morph1Freeze) {
-      morph1StartRise();
+    if (unitOk && !morph1.restReady && boom) {
+      morph1CaptureRest();
+      morph1Resize();
+    }
+    // Hand over from the HTML still once the lying unit has rendered.
+    if (unitOk && morph1.restReady && (morph1.liveFrames = (morph1.liveFrames || 0) + 1) === 2) {
+      document.body.classList.add("morph1-live");
+    }
+    if (unitOk && morph1.restReady && !window.__morph1Freeze) {
+      if (morph1.scanQueued) morph1BeginScan();
+      else if (morph1Autoplay && elapsed >= MORPH1_FLAT_MIN_S) morph1BeginScan();
     }
     return;
   }
+  if (morph1.phase === "scan") {
+    morph1FlatFrame();
+    const p = (now - morph1.scanAt) / 1000 / MORPH1_SWEEP_S;
+    morph1ScanFx(Math.min(1, p));
+    if (p >= 1) morph1StartRise();
+    return;
+  }
   if (morph1.phase === "rise") {
-    morph1Look(false);
+    morph1Look();
     const tr = (now - morph1.riseAt) / 1000;
-    const span = (w) => m1clamp01((tr - w[0]) / (w[1] - w[0]));
-    morph1ApplyCamera(span(MORPH1_TILT_S));
+    morph1ApplyCamera(m1span(tr, MORPH1_TILT_S));
     for (const m of mods) {
-      const u = m.userData.m1under
-        ? (tr - Math.max(m.userData.m1delay, morph1.underDelay)) / MORPH1_UNDER_RISE_S
-        : (tr - m.userData.m1delay) / MORPH1_MOD_RISE_S;
-      m.scale.y = MORPH1_FLAT_SCALE + (1 - MORPH1_FLAT_SCALE) * m1outBack(u);
+      if (m.userData.m1stay) {
+        m.scale.y = MORPH1_FLAT_SCALE;
+        continue;
+      }
+      const u = (tr - m.userData.m1start) / MORPH1_MOD_RISE_S;
+      if (m.userData.m1masked) {
+        // No flat cap here in the still: grow from the ground once clear.
+        m.visible = u > 0;
+        m.scale.y = Math.max(0.001, m1outBack(u));
+      } else {
+        m.scale.y = MORPH1_FLAT_SCALE + (1 - MORPH1_FLAT_SCALE) * m1outBack(u);
+      }
       m.position.y = 0;
     }
-    const capA = 1 - span(MORPH1_CAP_FADE);
+    const capA = 1 - m1span(tr, MORPH1_CAP_FADE);
     for (const mat of morph1.capMats) mat.opacity = capA;
     for (const cap of morph1.caps) cap.visible = capA > 0.01;
-    if (morph1.logo) {
-      const la = 1 - span(MORPH1_LOGO_FADE);
-      morph1.logo.material.opacity = la;
-      morph1.logo.visible = la > 0.01;
-    }
-    if (morph1.shadow) morph1.shadow.material.opacity = 0.18 * m1smooth(span(MORPH1_TILT_S));
+    if (morph1.shadow) morph1.shadow.material.opacity = 0.18 * m1smooth(m1span(tr, MORPH1_TILT_S));
     if (boom) {
-      const ee = m1smooth(span(MORPH1_EMERGE_S));
-      const he = m1smooth(span(MORPH1_HINGE_S));
-      boom.visible = ee > 0.001;
-      morph1UnitPose(he, ee);
+      const he = m1ease(m1span(tr, MORPH1_HINGE_S));
+      boom.visible = true;
+      morph1UnitPose(he, he);
       morph1.hingeDeg = +(90 * (1 - he)).toFixed(1);
-      // Lying face-up, the clearcoat mirrors the white room; ease reflections in with the hinge.
-      scene.environmentIntensity = 0.4 + 0.6 * he;
+      const arm = morph1ArmAt(tr);
+      setSignalAspect(arm >= 0.999 ? "green" : "red");
     }
     living.ledMats.forEach((mat, i) => {
       mat.emissiveIntensity = 0.8 + Math.sin(t * 3.4 + i * 0.35) * 0.6;
     });
-    const end = Math.max(MORPH1_TILT_S[1], MORPH1_HINGE_S[1],
-      MORPH1_MOD_DELAY_S + MORPH1_RIPPLE_S + MORPH1_MOD_RISE_S,
-      morph1.underDelay + MORPH1_UNDER_RISE_S);
-    if (tr >= end) morph1FinishRise();
+    if (tr >= (morph1.riseEnd || MORPH1_HINGE_S[1])) morph1FinishRise();
     return;
   }
-  // hold + show: motion3 field camera, unit up, showtime drives boom + lamps.
-  morph1Look(false);
+  // hold + show: end camera, unit up, showtime drives boom + lamps.
+  morph1Look();
   scene.environmentIntensity = 1;
   morph1ApplyCamera(1);
   if (boom) boom.visible = true;
@@ -4088,6 +4397,37 @@ function morph1Tick(dt, t) {
   }
 }
 
+/**
+ * Build-time hook for scripts/make-morph-qr.mjs: renders frame 0's lying
+ * unit alone (same scene, lights, camera direction and tone mapping) on a
+ * flat background, square, with the quiet-zone pad filling the image.
+ */
+function morph1Bake(px, bgHex) {
+  if (!morph1.restReady) return null;
+  const savedPR = renderer.getPixelRatio();
+  const savedSize = renderer.getSize(new THREE.Vector2());
+  const savedBg = scene.background;
+  morph1Look();
+  morph1UnitPose(0, 0);
+  morph1ArmAt(0);
+  setSignalAspect("red");
+  boom.visible = true;
+  grid.visible = false;
+  const bg = new THREE.Color(bgHex);
+  scene.background = bg;
+  renderer.setClearColor(bg, 1);
+  const cam = morph1BakeFrustum();
+  renderer.setPixelRatio(1);
+  renderer.setSize(px, px, false);
+  renderer.render(scene, cam);
+  const url = renderer.domElement.toDataURL("image/png");
+  grid.visible = true;
+  scene.background = savedBg;
+  renderer.setPixelRatio(savedPR);
+  renderer.setSize(savedSize.x, savedSize.y, false);
+  return url;
+}
+
 function morph1Snapshot() {
   if (!morph1Wanted) return null;
   return {
@@ -4095,11 +4435,12 @@ function morph1Snapshot() {
     tipUrl: MORPH1_TIP_URL,
     version: morph1Qr.version,
     size: morph1Qr.size,
-    knockout: morph1Ko,
-    logoPlace: morph1.logoPlace,
-    logoReady: morph1.logoReady,
+    bakeMode: morph1BakeMode,
+    maskCells: morph1Mask ? morph1Mask.reduce((a, b) => a + b, 0) : 0,
     unitReady: morph1.unitReady,
     unitFailed: morph1.unitFailed,
+    restReady: morph1.restReady,
+    unitScale: morph1.unitScale ?? null,
     usingGlb,
     showtimePhase,
     showMode,
@@ -4108,9 +4449,17 @@ function morph1Snapshot() {
     destLeave,
     leaveDest,
     scanFrac: MORPH1_SCAN_FRAC,
+    scanPadPx: morph1PadPx(),
+    autoplay: morph1Autoplay,
     marks: { ...morph1.marks },
+    riseEnd: morph1.riseEnd,
     hingeDeg: morph1.hingeDeg ?? (morph1.phase === "flat" ? 90 : 0),
-    matrixRows: morph1Qr.matrix.map((row, r) => row.map((bit, c) => (inKnockout(morph1Ko, r, c) ? 0 : bit)).join("")),
+    lyingBox: morph1.lyingBox ? { min: morph1.lyingBox.min.toArray(), max: morph1.lyingBox.max.toArray() } : null,
+    standBox: morph1.standBox ? { min: morph1.standBox.min.toArray(), max: morph1.standBox.max.toArray() } : null,
+    padSize: living.padSize,
+    cell: living.cell,
+    matrixRows: morph1Qr.matrix.map((row, r) => row.map((bit, c) => (morph1Masked(r, c) ? 0 : bit)).join("")),
+    maskRows: morph1Qr.matrix.map((row, r) => row.map((bit, c) => (morph1Masked(r, c) ? 1 : 0)).join("")),
   };
 }
 
@@ -4266,6 +4615,8 @@ syncModeHud();
 
 window.__iqr = {
   get morph1() { return morph1Snapshot(); },
+  morph1Bake: (px, bg) => morph1Bake(px, bg),
+  morph1Measure: () => morph1Measure(),
   startShowtime,
   settleShowtime,
   leaveToDest,

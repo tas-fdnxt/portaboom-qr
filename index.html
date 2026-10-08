@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex,nofollow">
 <title>PORTABOOM QR</title>
 <meta property="og:title" content="PORTABOOM QR">
-<meta property="og:description" content="Scan the flat PORTABOOM QR and watch it rise into the PB4000.">
+<meta property="og:description" content="Scan the PORTABOOM QR and watch the PB4000 stand up out of it.">
 <meta property="og:image" content="https://tas-fdnxt.github.io/portaboom-qr/portaboom-morph-qr.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
@@ -69,10 +69,26 @@ body.motion3{background:#f4efe6}
 body.motion3 canvas#stage:not([data-iqr-ready]){background:#f4efe6}
 body.morph1{background:#f4efe6}
 body.morph1 canvas#stage{background:#f4efe6}
-/* morph1: the still itself is the instant first paint, sized exactly like the WebGL frame 0 (pad = 88% of the short side). */
-#morph1Still{display:none}
-body.morph1 #morph1Still{display:block;position:fixed;left:50%;top:50vh;top:50dvh;width:min(88vw,88vh);height:min(88vw,88vh);width:min(88vw,88dvh);height:min(88vw,88dvh);transform:translate(-50%,-50%);z-index:1;pointer-events:none}
+/* morph1: the still itself is the instant first paint, sized exactly like the WebGL frame 0:
+   the QR square is 90% of the width, capped so the scan button fits below it. --m1q is the square side. */
+body.morph1{--m1q:min(90vw, calc(100vh - 200px));--m1q:min(90vw, calc(100dvh - 200px))}
+#morph1Still,#morph1Scan,#morph1ScanFx{display:none}
+body.morph1 #morph1Still{display:block;position:fixed;left:50%;top:50vh;top:50dvh;width:var(--m1q);height:var(--m1q);transform:translate(-50%,-50%);z-index:1;pointer-events:none}
 body.morph1.morph1-live #morph1Still{display:none}
+body.morph1 #morph1Scan{display:inline-flex;align-items:center;justify-content:center;gap:10px;position:fixed;left:50%;top:calc(50vh + var(--m1q) / 2 + 22px);top:calc(50dvh + var(--m1q) / 2 + 22px);transform:translateX(-50%);z-index:4;min-width:220px;min-height:60px;padding:0 34px;border:0;border-radius:999px;background:#EE7202;color:#fff;font:700 19px/1 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;letter-spacing:.02em;box-shadow:0 6px 18px rgba(238,114,2,.35),0 2px 4px rgba(27,42,74,.18);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+body.morph1 #morph1Scan svg{width:24px;height:24px;flex:none}
+body.morph1 #morph1Scan:focus-visible{outline:3px solid #1B2A4A;outline-offset:3px}
+body.morph1 #morph1Scan.pressed{background:#C95F00;box-shadow:0 2px 8px rgba(238,114,2,.3);transform:translateX(-50%) scale(.96)}
+body.morph1 #morph1Scan[hidden]{display:none}
+body.morph1 #morph1ScanFx{position:fixed;left:50%;top:50vh;top:50dvh;width:var(--m1q);height:var(--m1q);transform:translate(-50%,-50%);z-index:3;pointer-events:none;overflow:hidden;opacity:0}
+body.morph1.morph1-scanning #morph1ScanFx{display:block}
+#morph1ScanFx .br{position:absolute;width:15%;height:15%;border:0 solid #EE7202}
+#morph1ScanFx .tl{left:2%;top:2%;border-left-width:6px;border-top-width:6px;border-top-left-radius:10px}
+#morph1ScanFx .tr{right:2%;top:2%;border-right-width:6px;border-top-width:6px;border-top-right-radius:10px}
+#morph1ScanFx .bl{left:2%;bottom:2%;border-left-width:6px;border-bottom-width:6px;border-bottom-left-radius:10px}
+#morph1ScanFx .brr{right:2%;bottom:2%;border-right-width:6px;border-bottom-width:6px;border-bottom-right-radius:10px}
+#morph1ScanFx .line{position:absolute;left:4%;right:4%;top:0;height:4px;border-radius:2px;background:#EE7202;box-shadow:0 0 14px 4px rgba(238,114,2,.55)}
+#morph1ScanFx .glow{position:absolute;left:4%;right:4%;top:0;height:18%;background:linear-gradient(to bottom,rgba(238,114,2,0),rgba(238,114,2,.16));transform:translateY(-100%)}
 @media (max-width:480px){
   .dock{gap:7px}
   .btn{padding:12px 14px;font-size:12px;flex:1 1 calc(50% - 8px)}
@@ -80,7 +96,9 @@ body.morph1.morph1-live #morph1Still{display:none}
 </style>
 </head>
 <body class="live-scan">
-<img id="morph1Still" src="./portaboom-morph-qr.svg" alt="" aria-hidden="true">
+<img id="morph1Still" src="./portaboom-morph-qr.png" alt="" aria-hidden="true">
+<button id="morph1Scan" type="button" aria-label="Tap to scan the PORTABOOM QR code"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3M6 12h12"/></svg><span>Tap to scan</span></button>
+<div id="morph1ScanFx" aria-hidden="true"><i class="br tl"></i><i class="br tr"></i><i class="br bl"></i><i class="br brr"></i><i class="glow"></i><i class="line"></i></div>
 <canvas id="stage" aria-label="PORTABOOM PB4000 QR"></canvas>
 <div class="vig" aria-hidden="true"></div>
 <div id="status">Living QR · tap to scan the field</div>
@@ -136,7 +154,12 @@ body.morph1.morph1-live #morph1Still{display:none}
     const hint = document.getElementById("motionHint");
     if (hint) hint.textContent = "Living field";
   }
-  if (morph1) document.body.classList.add("morph1");
+  if (morph1) {
+    document.body.classList.add("morph1");
+    // A press before the 3D scene is up is remembered; app.js starts the scan when ready.
+    const btn = document.getElementById("morph1Scan");
+    if (btn) btn.addEventListener("click", () => { window.__morph1ScanQueued = true; });
+  }
   const src = morph1 ? "./app.js?v=morph1" : motion3 ? "./app.js?v=motion3" : motion2 ? "./app.js?v=motion2" : motion1 ? "./app.js?v=motion1" : "./app.js?v=living10";
   const s = document.createElement("script");
   s.type = "module";

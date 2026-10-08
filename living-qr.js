@@ -180,6 +180,8 @@ export function buildLivingQr(THREE, spec) {
     toneMapped: false,
   });
 
+  // morph1 scales the cuboids with its larger unit; other modes keep 1.
+  const heightScale = spec.heightScale ?? 1;
   const fill = cell * MODULE_FILL;
   const capFill = cell * (spec.capFill ?? MODULE_FILL);
   const capGeo = new THREE.BoxGeometry(capFill, cell * 0.07, capFill);
@@ -218,7 +220,7 @@ export function buildLivingQr(THREE, spec) {
 
       const g = new THREE.Group();
       g.name = `QrMod_${r}_${c}`;
-      const bodyH = heightFor(vocab);
+      const bodyH = heightFor(vocab) * heightScale;
       const striped = vocab === "boom" || vocab === "timing";
       if (striped) stripeModules += 1;
 

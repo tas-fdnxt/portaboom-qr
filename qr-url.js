@@ -41,28 +41,6 @@ export function encodeUrlMatrix(url, opts = {}) {
   return { url: String(url), ecc, version: (n - 17) / 4, size: n, dark, matrix };
 }
 
-/**
- * Centre knockout for the PORTABOOM logo, in whole modules.
- * About 16% of the symbol area for version 6 (21 x 13 of 41 x 41).
- */
-export function logoKnockout(n) {
-  const odd = (v) => (v % 2 ? v : v + 1);
-  const cols = odd(Math.round(n * 0.52));
-  const rows = odd(Math.round(n * 0.32));
-  const c0 = (n - cols) / 2;
-  const r0 = (n - rows) / 2;
-  return { r0, c0, rows, cols, areaFrac: (rows * cols) / (n * n) };
-}
-
-export function inKnockout(ko, r, c) {
-  return r >= ko.r0 && r < ko.r0 + ko.rows && c >= ko.c0 && c < ko.c0 + ko.cols;
-}
-
-/** Matrix as printed and as drawn on frame 0: knockout modules forced light. */
-export function knockedMatrix(matrix, ko) {
-  return matrix.map((row, r) => row.map((bit, c) => (inKnockout(ko, r, c) ? 0 : bit)));
-}
-
 /** Finder outer ring (TAS orange) vs finder eye / data (navy). */
 export function finderRole(n, r, c) {
   const corners = [[0, 0], [0, n - 7], [n - 7, 0]];
@@ -85,34 +63,42 @@ export const MORPH_PALETTE = Object.freeze({
 });
 
 /**
- * Logo box inside the knockout, in module units from the symbol's top-left
- * (quiet zone excluded). One module of cream padding on every side.
+ * Fixed version for the tip so the still, the page and every host share one
+ * grid size (57 x 57 at version 10). The lying unit knockout is baked for it.
  */
-export function logoPlacement(ko, aspect) {
-  const availW = ko.cols - 2;
-  const availH = ko.rows - 2;
-  let w = availW;
-  let h = w / aspect;
-  if (h > availH) {
-    h = availH;
-    w = h * aspect;
-  }
-  return {
-    x: ko.c0 + (ko.cols - w) / 2,
-    y: ko.r0 + (ko.rows - h) / 2,
-    w,
-    h,
-  };
-}
-
-/**
- * Smallest version the logo knockout is tested at. Short URLs (local test
- * hosts) would otherwise land on version 4, where a 16% knockout eats most
- * of the ECC H budget.
- */
-export const MORPH_MIN_VERSION = 6;
+export const MORPH_MIN_VERSION = 10;
 
 /** The one call both the still and the page use for the tip matrix. */
 export function encodeTipMatrix(url) {
   return encodeUrlMatrix(url, { ecc: MORPH_ECC, minVersion: MORPH_MIN_VERSION });
+}
+
+/**
+ * Unit knockout mask (cells where the lying unit covers the symbol), packed
+ * as hex, row-major, 4 cells per digit. Returns a Uint8Array of n * n.
+ */
+export function unpackMask(mask, n) {
+  const out = new Uint8Array(n * n);
+  if (!mask || mask.n !== n || !mask.hex) return null;
+  for (let i = 0; i < n * n; i += 1) {
+    const d = parseInt(mask.hex[i >> 2], 16) || 0;
+    out[i] = (d >> (3 - (i & 3))) & 1;
+  }
+  return out;
+}
+
+export function packMask(bits, n) {
+  let hex = "";
+  for (let i = 0; i < n * n; i += 4) {
+    let d = 0;
+    for (let k = 0; k < 4; k += 1) d = (d << 1) | (bits[i + k] ? 1 : 0);
+    hex += d.toString(16);
+  }
+  return hex;
+}
+
+/** Matrix as printed and as drawn on frame 0: masked modules forced light. */
+export function maskedMatrix(matrix, bits) {
+  const n = matrix.length;
+  return matrix.map((row, r) => row.map((bit, c) => (bits && bits[r * n + c] ? 0 : bit)));
 }
