@@ -4389,6 +4389,9 @@ function morph1CaptureRest() {
     morph1.footZ = (bb.min.z + bb.max.z) / 2;
     morph1.footW = (bb.max.x - bb.min.x) * 1.5;
     morph1.footD = Math.max(T, bb.max.z - bb.min.z) * 1.9;
+    boom.updateMatrixWorld(true);
+    morph1.footLocal = boom.worldToLocal(new THREE.Vector3(morph1.footX, bb.min.y, morph1.footZ));
+    morph1.footGroundY = bb.min.y;
   }
   morph1.uprightDepth = T;
   morph1.riseEnd = Math.max(MORPH1_TILT_S[1], MORPH1_HINGE_S[1], MORPH1_ARM_S[1],
@@ -4546,18 +4549,17 @@ function morph1TileFloor(tr) {
   }
 }
 
-/** Contact shadow under the unit, fading in as it reaches upright. */
+/** Contact shadow under the unit's feet: follows the real footprint and only shows once it is down. */
 function morph1Contact(he) {
   const env = morph1.env;
-  if (!env || !morph1.restReady) return;
-  const a = m1smooth((he - 0.55) / 0.45);
+  if (!env || !morph1.restReady || !morph1.footLocal || !boom) return;
+  boom.updateMatrixWorld(true);
+  const f = boom.localToWorld(morph1.footLocal.clone());
+  const lift = Math.max(0, f.y - morph1.footGroundY);
+  const a = m1smooth((he - 0.8) / 0.2) * m1smooth(1 - lift / (living.cell * 4));
   env.contact.visible = a > 0.001;
   if (!env.contact.visible) return;
-  const sb = morph1.standBox;
-  if (!sb) return;
-  const dx = morph1.slideX * (1 - he);
-  const dz = morph1.slideZ * (1 - he);
-  env.contact.position.set((morph1.footX ?? (sb.min.x + sb.max.x) / 2) - dx, living.cell * 0.08, (morph1.footZ ?? (sb.min.z + sb.max.z) / 2) - dz);
+  env.contact.position.set(f.x, living.cell * 0.08, f.z);
   env.contact.scale.set(morph1.footW ?? 1.2, morph1.footD ?? 1.2, 1);
   env.contact.material.opacity = 0.9 * a;
 }
