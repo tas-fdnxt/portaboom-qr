@@ -3623,9 +3623,12 @@ const MORPH1_HINGE_S = [0.05, 3.25];
 /** The boom arm, laid along the ground in the still, swings up once the unit is nearly upright. */
 const MORPH1_ARM_S = [2.5, 4.1];
 const MORPH1_TILT_S = [0.1, 3.5];
+/** The QR modules stay a flat navy tile floor; a low wave runs out through them. */
 const MORPH1_MOD_DELAY_S = 0.35;
-const MORPH1_RIPPLE_S = 1.0;
-const MORPH1_MOD_RISE_S = 1.3;
+const MORPH1_RIPPLE_S = 1.1;
+const MORPH1_MOD_RISE_S = 0.9;
+/** Peak wave height as a multiple of the tile thickness. */
+const MORPH1_WAVE_AMP = 3;
 /** Scan caps fade out as the cuboids come up. */
 const MORPH1_CAP_FADE = [1.3, 2.5];
 /** Beat with the unit up before the boom cycle starts. */
@@ -3646,21 +3649,29 @@ const MORPH1_SWEEP_S = 0.8;
 const morph1Autoplay = pageParams.get("autoplay") === "1";
 /** Nudge of the lying silhouette from centre, in modules (x, z). */
 const MORPH1_LYING_SHIFT = [1.6, -0.5];
-/** Where the unit stands at the end, as a fraction of the pad (negative = far side). */
-const MORPH1_STAND_Z_FRAC = -0.2;
+/** Where the unit stands at the end, as a fraction of the pad (negative = far side); centred in x. */
+const MORPH1_STAND_Z_FRAC = -0.05;
 /*
  * End camera: standing in front of the unit. Eye at the signal lens height,
- * zero pitch, square on to the lenses (perspective). The frame is composed
- * with a lens shift, not by tilting: lenses in the upper third, slightly
- * left so the boom reads to the right, wheels low, field in front.
+ * zero pitch (perspective), centred on the cabinet + signal housing. The
+ * frame is composed with a vertical lens shift, never by tilting.
  */
 const MORPH1_END_FOV_PORTRAIT = 50;
 const MORPH1_END_FOV_WIDE = 34;
-/** Lens centre on screen, from the top (fraction of height) and from the left (fraction of width). */
-const MORPH1_END_HEAD_Y = 1 / 3;
-const MORPH1_END_HEAD_X = 0.42;
-/** Wheels (bottom-front of the unit) at this fraction from the top. */
-const MORPH1_END_BASE_Y = 0.8;
+/** Unit (ground to top of the signal housing, boom excluded) as a fraction of screen height. */
+const MORPH1_END_UNIT_H = 0.66;
+/** Lens stack centre, fraction of screen height from the top (kept within 0.35-0.42). */
+const MORPH1_END_LENS_Y = 0.38;
+/** Never let the unit body take more than this much of the screen width. */
+const MORPH1_END_MAX_W = 0.8;
+/*
+ * End environment: soft sky gradient, horizon at eye level, subtle ground.
+ * Everything starts as the still's cream and blends in with the camera move.
+ */
+const MORPH1_SKY_TOP = "#D7E0EA";
+const MORPH1_HORIZON = "#F1ECE3";
+const MORPH1_TILE_END = "#34466B";
+const MORPH1_GROUND = "#E3DACB";
 
 const morph1 = {
   phase: morph1Wanted ? "flat" : "off", // flat | scan | rise | hold | show
@@ -3681,6 +3692,8 @@ const morph1 = {
   restQuat: null,
   pivot: null,
   slideZ: 0, // pivot travel from lying to standing
+  slideX: 0,
+  env: null,
   lyingBox: null,
   standBox: null,
   matte: [],
@@ -3759,8 +3772,23 @@ function morph1Init() {
     m.userData.m1masked = morph1Masked(m.userData.r, m.userData.c);
     m.userData.m1delay = MORPH1_MOD_DELAY_S + (m.userData.m1d / maxD) * MORPH1_RIPPLE_S;
     m.userData.m1start = m.userData.m1delay;
-    m.scale.y = MORPH1_FLAT_SCALE;
+    // morph1 keeps only the flat navy cap: a clean tile sitting on the ground.
+    m.scale.set(1, 1, 1);
+    // Drop the tall-module chrome (bodies, bands, rims, dots, logos) outright so no
+    // other look toggle can bring it back.
+    for (const child of [...m.children]) {
+      if (child.name === "QrModTop") child.visible = !m.userData.m1masked;
+      else m.remove(child);
+    }
+    const cap = m.getObjectByName("QrModTop");
+    if (cap) {
+      cap.position.y = living.cell * 0.035;
+      cap.castShadow = false;
+      cap.receiveShadow = false;
+      m.userData.m1cap = cap;
+    }
   }
+  morph1BuildEnv();
   // Soft contact shadows once the field stands up.
   const shadow = new THREE.Mesh(
     new THREE.PlaneGeometry(living.padSize * 1.8, living.padSize * 1.8),
@@ -3768,9 +3796,10 @@ function morph1Init() {
   );
   shadow.name = "Morph1Shadow";
   shadow.rotation.x = -Math.PI / 2;
-  shadow.position.y = living.cell * 0.005;
+  shadow.position.y = living.cell * 0.075;
   shadow.receiveShadow = true;
   shadow.visible = false;
+  shadow.userData.m1off = true; // sun shadows read as ghost boxes; contact shadow only
   grid.add(shadow);
   morph1.shadow = shadow;
   morph1PrepareUnit(boom);
@@ -3780,6 +3809,125 @@ function morph1Init() {
   addEventListener("resize", morph1Resize);
   if (window.visualViewport) window.visualViewport.addEventListener("resize", morph1Resize);
   morph1Resize();
+}
+
+/** Cabinet + signal housing (boom excluded): the "unit" the end frame is composed on. */
+function morph1BodyBox() {
+  const box = new THREE.Box3();
+  const cab = doorCabinetBox();
+  if (cab && !cab.isEmpty()) box.union(cab);
+  const head = boom ? findSignalHead(boom) : null;
+  if (head) {
+    const hb = worldBox(head);
+    if (hb && !hb.isEmpty()) box.union(hb);
+  }
+  if (box.isEmpty() && boom) box.copy(m1Box(boom));
+  box.min.y = Math.min(box.min.y, boom ? m1Box(boom).min.y : 0); // wheels on the ground
+  return box.isEmpty() ? null : box;
+}
+
+/** Sky dome, ground, fog and the contact shadow for the end frame. */
+function morph1BuildEnv() {
+  const cream = new THREE.Color(MORPH_PALETTE.cream);
+  const env = {
+    cream,
+    top: new THREE.Color(MORPH1_SKY_TOP),
+    horizon: new THREE.Color(MORPH1_HORIZON),
+    groundC: new THREE.Color(MORPH1_GROUND),
+    tileC: new THREE.Color(MORPH1_TILE_END),
+    mix: -1,
+  };
+  // Fog is on from the first frame (no recompiles later) but parked far away.
+  scene.fog = new THREE.Fog(cream.clone(), 1e5, 2e5);
+  const skyGeo = new THREE.SphereGeometry(1, 48, 24);
+  skyGeo.setAttribute("color", new THREE.BufferAttribute(new Float32Array(skyGeo.attributes.position.count * 3), 3));
+  const sky = new THREE.Mesh(skyGeo, new THREE.MeshBasicMaterial({
+    vertexColors: true, side: THREE.BackSide, fog: false, toneMapped: false, depthWrite: false,
+  }));
+  sky.name = "Morph1Sky";
+  sky.renderOrder = -10;
+  sky.frustumCulled = false;
+  const ground = new THREE.Mesh(
+    new THREE.CircleGeometry(90, 96),
+    new THREE.MeshBasicMaterial({ color: cream.clone(), toneMapped: false })
+  );
+  ground.name = "Morph1Ground";
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -living.cell * 0.03;
+  ground.renderOrder = -5;
+  // Contact shadow: soft dark ellipse under the standing unit.
+  const c = document.createElement("canvas");
+  c.width = c.height = 128;
+  const g = c.getContext("2d");
+  const grad = g.createRadialGradient(64, 64, 4, 64, 64, 64);
+  grad.addColorStop(0, "rgba(20,24,34,0.72)");
+  grad.addColorStop(0.45, "rgba(20,24,34,0.38)");
+  grad.addColorStop(1, "rgba(20,24,34,0)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 128, 128);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const contact = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false, opacity: 0 })
+  );
+  contact.name = "Morph1Contact";
+  contact.rotation.x = -Math.PI / 2;
+  contact.position.y = living.cell * 0.08;
+  contact.renderOrder = 3;
+  contact.visible = false;
+  const group = new THREE.Group();
+  group.name = "Morph1Env";
+  group.add(sky, ground, contact);
+  scene.add(group);
+  Object.assign(env, { group, sky, ground, contact });
+  morph1.env = env;
+  morph1EnvMix(0);
+}
+
+const _m1c = new THREE.Color();
+/** Blend the end environment in: 0 = the still's flat cream, 1 = sky, horizon, ground. */
+function morph1EnvMix(m) {
+  const env = morph1.env;
+  if (!env) return;
+  const k = Math.round(m1clamp01(m) * 1000) / 1000;
+  if (k === env.mix) return;
+  env.mix = k;
+  const pos = env.sky.geometry.attributes.position;
+  const col = env.sky.geometry.attributes.color;
+  for (let i = 0; i < pos.count; i += 1) {
+    const y = pos.getY(i);
+    const t = y <= 0 ? 0 : m1smooth(Math.min(1, y / 0.55));
+    _m1c.lerpColors(env.horizon, env.top, t);
+    _m1c.lerpColors(env.cream, _m1c, k);
+    col.setXYZ(i, _m1c.r, _m1c.g, _m1c.b);
+  }
+  col.needsUpdate = true;
+  _m1c.lerpColors(env.cream, env.groundC, k);
+  env.ground.material.color.copy(_m1c);
+  if (living.scanPad) living.scanPad.material.color.copy(_m1c);
+  scene.fog.color.lerpColors(env.cream, env.horizon, k);
+  // Tiles soften from print navy to a calmer floor navy so the unit leads.
+  for (const mat of morph1.capMats) {
+    if (!mat.userData.m1base) mat.userData.m1base = mat.color.clone();
+    mat.color.lerpColors(mat.userData.m1base, env.tileC, k);
+  }
+}
+
+/** Keep the sky dome around the camera, inside its clip range; fog relative to the subject. */
+function morph1EnvFollow(m, dist) {
+  const env = morph1.env;
+  if (!env) return;
+  env.sky.position.copy(morph1Cam.position);
+  env.sky.scale.setScalar(dist + 10);
+  // Objects at the subject distance stay clear; the tile floor and ground fade to the horizon behind.
+  // The unit itself has fog off, so only the floor and ground fade.
+  const k = Math.pow(m, 0.35);
+  // At k = 0 the fog colour equals the cream ground, so frame 0 is untouched.
+  const near = dist + THREE.MathUtils.lerp(30, -0.3, k);
+  const far = near + THREE.MathUtils.lerp(60, 3.6, k);
+  scene.fog.near = near;
+  scene.fog.far = far;
 }
 
 function morph1ViewSize() {
@@ -3855,9 +4003,9 @@ function morph1LensInfo() {
 }
 
 /**
- * End camera: eye at lens height, zero pitch, looking straight at the lens
- * faces (the unit front faces +Z when upright). Distance puts the wheels at
- * MORPH1_END_BASE_Y; a lens shift places the lenses in the upper third.
+ * End camera: eye at lens height, zero pitch, centred on the cabinet +
+ * signal housing, distance set so that body is MORPH1_END_UNIT_H of the
+ * screen height; a vertical lens shift puts the lens stack at MORPH1_END_LENS_Y.
  */
 function morph1DoorPose() {
   if (!boom || !morph1.restReady) return null;
@@ -3868,36 +4016,44 @@ function morph1DoorPose() {
   const savedVis = boom.visible;
   const savedArm = boomRig ? boomRig.shownPct : null;
   morph1UnitPose(1, 1);
-  if (boomRig) applyBoomShown(0);
+  if (boomRig) applyBoomShown(100);
   boom.visible = true;
   boom.updateMatrixWorld(true);
   const lens = morph1LensInfo();
-  const unitBox = m1Box(boom);
+  const body = morph1BodyBox() || m1Box(boom);
   boom.position.copy(savedPos);
   boom.quaternion.copy(savedQuat);
   boom.visible = savedVis;
   if (boomRig && savedArm != null) applyBoomShown(savedArm);
   boom.updateMatrixWorld(true);
-  const L = lens ? lens.center : unitBox.getCenter(new THREE.Vector3());
+  const bc = body.getCenter(new THREE.Vector3());
+  const L = lens ? lens.center : bc;
   const fov = aspect < 1 ? MORPH1_END_FOV_PORTRAIT : MORPH1_END_FOV_WIDE;
   const t = Math.tan(THREE.MathUtils.degToRad(fov) / 2);
-  const shiftY = 1 - 2 * MORPH1_END_HEAD_Y; // NDC of the lens centre
-  const shiftX = 2 * MORPH1_END_HEAD_X - 1;
-  const baseNdc = 1 - 2 * MORPH1_END_BASE_Y;
-  // Wheels: bottom-front of the standing unit.
-  const zFront = unitBox.max.z;
-  const yBase = unitBox.min.y;
-  const depthBase = (L.y - yBase) / ((shiftY - baseNdc) * t);
-  const camZ = zFront + depthBase;
-  const dist = camZ - L.z;
+  const bodyH = body.max.y - body.min.y;
+  const bodyW = body.max.x - body.min.x;
+  // Depth from the camera to the body's mid plane.
+  let dz = bodyH / (2 * t * MORPH1_END_UNIT_H);
+  dz = Math.max(dz, bodyW / (2 * t * aspect * MORPH1_END_MAX_W));
+  // Lens stack position: keep the housing top and the wheels inside with margin.
+  const frac = (y) => (L.y - y) / (2 * dz * t); // screen-height fraction above the lens line
+  let lensY = MORPH1_END_LENS_Y;
+  const topY = lensY - frac(body.max.y);
+  const botY = lensY - frac(body.min.y);
+  if (topY < 0.08) lensY += 0.08 - topY;
+  if (botY > 0.95) lensY -= botY - 0.95;
+  lensY = THREE.MathUtils.clamp(lensY, 0.35, 0.42);
+  const camZ = bc.z + dz;
+  const target = new THREE.Vector3(bc.x, L.y, L.z);
   return {
-    quat: new THREE.Quaternion(), // looking down -Z, zero pitch, zero yaw
-    target: L.clone(),
-    height: 2 * dist * t,
+    quat: new THREE.Quaternion(), // looking down -Z: zero pitch, zero yaw
+    target,
+    height: 2 * (camZ - L.z) * t,
     fov,
-    shiftX,
-    shiftY,
+    shiftX: 0,
+    shiftY: 1 - 2 * lensY,
     aspect,
+    lensY,
   };
 }
 
@@ -3936,6 +4092,9 @@ function morph1ApplyCamera(u) {
   morph1Cam.projectionMatrixInverse.copy(morph1Cam.projectionMatrix).invert();
   morph1Cam.updateMatrixWorld(true);
   camera = morph1Cam;
+  const em = Math.pow(e, 1.3);
+  morph1EnvMix(em);
+  morph1EnvFollow(em, dist);
 }
 
 /** Final-frame geometry check: camera pitch/yaw and lens normal vs view direction. */
@@ -3949,7 +4108,29 @@ function morph1Measure() {
     cameraFovDeg: +morph1Cam.fov.toFixed(2),
     cameraPos: morph1Cam.position.toArray().map((x) => +x.toFixed(3)),
   };
+  const { w, h } = morph1ViewSize();
+  const toScreen = (p) => {
+    const v = p.clone().project(morph1Cam);
+    return { x: (v.x + 1) / 2, y: (1 - v.y) / 2 };
+  };
+  const body = morph1BodyBox();
+  if (body) {
+    const c = body.getCenter(new THREE.Vector3());
+    const top = toScreen(new THREE.Vector3(c.x, body.max.y, c.z));
+    const bot = toScreen(new THREE.Vector3(c.x, body.min.y, body.max.z));
+    const left = toScreen(new THREE.Vector3(body.min.x, c.y, body.max.z));
+    const right = toScreen(new THREE.Vector3(body.max.x, c.y, body.max.z));
+    out.viewport = `${w}x${h}`;
+    out.unitTopY = +top.y.toFixed(3);
+    out.unitGroundY = +bot.y.toFixed(3);
+    out.unitHeightFrac = +(bot.y - top.y).toFixed(3);
+    out.unitLeftX = +left.x.toFixed(3);
+    out.unitRightX = +right.x.toFixed(3);
+    out.unitCentreX = +((left.x + right.x) / 2).toFixed(3);
+  }
   if (lens) {
+    out.lensCentreY = +toScreen(lens.center).y.toFixed(3);
+    out.lensCentreX = +toScreen(lens.center).x.toFixed(3);
     const toLens = lens.center.clone().sub(morph1Cam.position).normalize();
     out.lensCenter = lens.center.toArray().map((x) => +x.toFixed(3));
     out.cameraHeightMinusLensHeight = +(morph1Cam.position.y - lens.center.y).toFixed(4);
@@ -4002,6 +4183,15 @@ function morph1CollectMatte() {
   boom.traverse((o) => {
     const list = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
     for (const mat of list) {
+      if (mat.fog) {
+        mat.fog = false;
+        mat.needsUpdate = true;
+      }
+    }
+  });
+  boom.traverse((o) => {
+    const list = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+    for (const mat of list) {
       if (seen.has(mat) || !mat.isMeshStandardMaterial) continue;
       seen.add(mat);
       if (!mat.userData.m1orig) {
@@ -4044,6 +4234,7 @@ function morph1UnitPose(hingeE, slideE) {
   boom.quaternion.copy(_m1h).multiply(morph1.restQuat);
   _m1v.copy(morph1.restPos).sub(morph1.pivot).applyQuaternion(_m1h).add(morph1.pivot);
   _m1v.z += morph1.slideZ * slideE;
+  _m1v.x += morph1.slideX * slideE;
   boom.position.copy(_m1v);
   const m = 1 - m1smooth((hingeE - 0.55) / 0.45);
   morph1ApplyMatte(m);
@@ -4105,6 +4296,7 @@ function morph1CaptureRest() {
     morph1.restQuat = boom.quaternion.clone();
     morph1.pivot = new THREE.Vector3(0, box.min.y, box.min.z);
     morph1.slideZ = 0;
+    morph1.slideX = 0;
     morph1.restReady = true;
     morph1UnitPose(0, 0);
     boom.updateMatrixWorld(true);
@@ -4123,8 +4315,14 @@ function morph1CaptureRest() {
   // Standing spot further into the field so the field fills the foreground.
   const standZ = MORPH1_STAND_Z_FRAC * living.padSize;
   morph1.slideZ = standZ - morph1.pivot.z;
+  // ...and centred in x on the cabinet + signal housing.
+  morph1UnitPose(1, 0);
+  boom.updateMatrixWorld(true);
+  const body0 = morph1BodyBox();
+  morph1.slideX = body0 ? -body0.getCenter(new THREE.Vector3()).x : 0;
   const final = morph1.restPos.clone();
   final.z += morph1.slideZ;
+  final.x += morph1.slideX;
   boom.userData.m1RestPos = final;
   morph1.finalPos = final;
   morph1CollectMatte();
@@ -4132,7 +4330,7 @@ function morph1CaptureRest() {
   // Clearance: sample the real unit geometry through the rise and note, per
   // cell, the last time any part of it is below the cuboid tops.
   const pts = morph1UnitPoints();
-  const modTop = 0.36 * MORPH1_HEIGHT_SCALE + cell * 0.6;
+  const modTop = cell * 0.07 * (1 + MORPH1_WAVE_AMP) + cell * 0.3;
   const steps = 72;
   const t0 = MORPH1_HINGE_S[0];
   const t1 = MORPH1_ARM_S[1];
@@ -4182,6 +4380,14 @@ function morph1CaptureRest() {
   morph1ArmAt(MORPH1_ARM_S[1]);
   boom.updateMatrixWorld(true);
   morph1.standBox = m1Box(boom);
+  {
+    const body = morph1BodyBox();
+    const bb = body || morph1.standBox;
+    morph1.footX = (bb.min.x + bb.max.x) / 2;
+    morph1.footZ = (bb.min.z + bb.max.z) / 2;
+    morph1.footW = (bb.max.x - bb.min.x) * 1.5;
+    morph1.footD = Math.max(T, bb.max.z - bb.min.z) * 1.9;
+  }
   morph1.uprightDepth = T;
   morph1.riseEnd = Math.max(MORPH1_TILT_S[1], MORPH1_HINGE_S[1], MORPH1_ARM_S[1],
     MORPH1_MOD_DELAY_S + MORPH1_RIPPLE_S + MORPH1_MOD_RISE_S, latest + MORPH1_MOD_RISE_S * 0.8);
@@ -4198,12 +4404,8 @@ function morph1StartRise() {
   morph1.marks.unit = usingGlb ? "glb" : "stand-in";
   if (!morph1.restReady) morph1CaptureRest();
   morph1.doorPose = morph1DoorPose();
-  for (const mat of morph1.capMats) {
-    mat.transparent = true;
-    mat.needsUpdate = true;
-  }
   morph1SetClip(boom, true);
-  if (morph1.shadow) morph1.shadow.visible = true;
+  if (morph1.shadow) morph1.shadow.visible = false;
   document.body.classList.add("morph1-rising");
 }
 
@@ -4211,17 +4413,9 @@ function morph1FinishRise() {
   morph1.phase = "hold";
   morph1.holdAt = performance.now();
   morph1.marks.unitUpAt = morph1.holdAt - morph1.bootAt;
-  for (const m of mods) {
-    m.scale.y = m.userData.m1stay ? MORPH1_FLAT_SCALE : 1;
-    m.visible = !(m.userData.m1stay && m.userData.m1masked);
-  }
-  for (const cap of morph1.caps) cap.visible = false;
-  for (const mat of morph1.capMats) {
-    mat.opacity = 1;
-    mat.transparent = false;
-    mat.needsUpdate = true;
-  }
+  morph1TileFloor(1e9);
   morph1UnitPose(1, 1);
+  morph1Contact(1);
   morph1ArmAt(MORPH1_ARM_S[1]);
   setSignalAspect("green");
   morph1SetClip(boom, false);
@@ -4300,12 +4494,16 @@ function morph1Look() {
 function morph1FlatFrame() {
   morph1Look();
   for (const m of mods) {
-    m.scale.y = MORPH1_FLAT_SCALE;
     m.position.y = 0;
     m.rotation.y = 0;
     m.visible = !m.userData.m1masked;
+    const cap = m.userData.m1cap;
+    if (cap) {
+      cap.visible = !m.userData.m1masked;
+      cap.scale.set(1, 1, 1);
+      cap.position.y = living.cell * 0.035;
+    }
   }
-  for (const cap of morph1.caps) cap.visible = true;
   if (boom) {
     boom.visible = morph1.restReady;
     if (morph1.restReady) morph1UnitPose(0, 0);
@@ -4313,6 +4511,53 @@ function morph1FlatFrame() {
   morph1ArmAt(0);
   setSignalAspect("red");
   morph1ApplyCamera(0);
+}
+
+/**
+ * The QR as a flat navy tile floor: a low wave runs out from the centre,
+ * cells under the lying unit fill in once it has lifted off, cells under the
+ * standing unit stay hidden. Nothing grows tall.
+ */
+function morph1TileFloor(tr) {
+  for (const m of mods) {
+    const cap = m.userData.m1cap;
+    if (!cap) continue;
+    m.position.y = 0;
+    if (m.userData.m1stay) {
+      m.visible = false;
+      continue;
+    }
+    const u = (tr - m.userData.m1start) / MORPH1_MOD_RISE_S;
+    const wave = u > 0 && u < 1 ? Math.sin(Math.PI * u) : 0;
+    if (m.userData.m1masked) {
+      const show = u > 0;
+      m.visible = show;
+      cap.visible = show;
+      const s = show ? Math.max(0.05, m1outBack(Math.min(1, u * 1.6))) : 0.05;
+      cap.scale.set(s, 1 + MORPH1_WAVE_AMP * wave, s);
+    } else {
+      m.visible = true;
+      cap.visible = true;
+      cap.scale.set(1, 1 + MORPH1_WAVE_AMP * wave, 1);
+    }
+    cap.position.y = living.cell * 0.035 * cap.scale.y;
+  }
+}
+
+/** Contact shadow under the unit, fading in as it reaches upright. */
+function morph1Contact(he) {
+  const env = morph1.env;
+  if (!env || !morph1.restReady) return;
+  const a = m1smooth((he - 0.55) / 0.45);
+  env.contact.visible = a > 0.001;
+  if (!env.contact.visible) return;
+  const sb = morph1.standBox;
+  if (!sb) return;
+  const dx = morph1.slideX * (1 - he);
+  const dz = morph1.slideZ * (1 - he);
+  env.contact.position.set((morph1.footX ?? (sb.min.x + sb.max.x) / 2) - dx, living.cell * 0.08, (morph1.footZ ?? (sb.min.z + sb.max.z) / 2) - dz);
+  env.contact.scale.set(morph1.footW ?? 1.2, morph1.footD ?? 1.2, 1);
+  env.contact.material.opacity = 0.9 * a;
 }
 
 function morph1Tick(dt, t) {
@@ -4347,29 +4592,16 @@ function morph1Tick(dt, t) {
     morph1Look();
     const tr = (now - morph1.riseAt) / 1000;
     morph1ApplyCamera(m1span(tr, MORPH1_TILT_S));
-    for (const m of mods) {
-      if (m.userData.m1stay) {
-        m.scale.y = MORPH1_FLAT_SCALE;
-        continue;
-      }
-      const u = (tr - m.userData.m1start) / MORPH1_MOD_RISE_S;
-      if (m.userData.m1masked) {
-        // No flat cap here in the still: grow from the ground once clear.
-        m.visible = u > 0;
-        m.scale.y = Math.max(0.001, m1outBack(u));
-      } else {
-        m.scale.y = MORPH1_FLAT_SCALE + (1 - MORPH1_FLAT_SCALE) * m1outBack(u);
-      }
-      m.position.y = 0;
-    }
-    const capA = 1 - m1span(tr, MORPH1_CAP_FADE);
-    for (const mat of morph1.capMats) mat.opacity = capA;
-    for (const cap of morph1.caps) cap.visible = capA > 0.01;
-    if (morph1.shadow) morph1.shadow.material.opacity = 0.18 * m1smooth(m1span(tr, MORPH1_TILT_S));
+    morph1TileFloor(tr);
     if (boom) {
       const he = m1ease(m1span(tr, MORPH1_HINGE_S));
+      // Sun shadow helps read the hinge; near upright the soft contact shadow takes over.
+      if (morph1.shadow) {
+        morph1.shadow.material.opacity = 0.2 * m1smooth(m1span(tr, MORPH1_TILT_S)) * (1 - m1smooth((he - 0.45) / 0.5));
+      }
       boom.visible = true;
       morph1UnitPose(he, he);
+      morph1Contact(he);
       morph1.hingeDeg = +(90 * (1 - he)).toFixed(1);
       const arm = morph1ArmAt(tr);
       setSignalAspect(arm >= 0.999 ? "green" : "red");
@@ -4384,11 +4616,9 @@ function morph1Tick(dt, t) {
   morph1Look();
   scene.environmentIntensity = 1;
   morph1ApplyCamera(1);
+  morph1TileFloor(1e9);
+  if (morph1.shadow) morph1.shadow.visible = false;
   if (boom) boom.visible = true;
-  for (const cap of morph1.caps) cap.visible = false;
-  living.ledMats.forEach((mat, i) => {
-    mat.emissiveIntensity = 0.8 + Math.sin(t * 3.4 + i * 0.35) * 0.6;
-  });
   if (morph1.phase === "hold" && (now - morph1.holdAt) / 1000 >= MORPH1_HOLD_S) {
     if (startShowtime()) {
       morph1.phase = "show";
@@ -4413,6 +4643,7 @@ function morph1Bake(px, bgHex) {
   setSignalAspect("red");
   boom.visible = true;
   grid.visible = false;
+  if (morph1.env) morph1.env.group.visible = false;
   const bg = new THREE.Color(bgHex);
   scene.background = bg;
   renderer.setClearColor(bg, 1);
@@ -4422,6 +4653,7 @@ function morph1Bake(px, bgHex) {
   renderer.render(scene, cam);
   const url = renderer.domElement.toDataURL("image/png");
   grid.visible = true;
+  if (morph1.env) morph1.env.group.visible = true;
   scene.background = savedBg;
   renderer.setPixelRatio(savedPR);
   renderer.setSize(savedSize.x, savedSize.y, false);
