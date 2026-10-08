@@ -3937,6 +3937,10 @@ function morph1Tick(dt, t) {
       morph1.logo.material.opacity = 1;
     }
     morph1ApplyCamera(0);
+    // Hand over from the HTML still to the WebGL flat frame once one frame with the logo has rendered.
+    if (morph1.logoReady && (morph1.liveFrames = (morph1.liveFrames || 0) + 1) === 2) {
+      document.body.classList.add("morph1-live");
+    }
     const elapsed = (now - morph1.bootAt) / 1000;
     const unitOk = morph1.unitReady || morph1.unitFailed || elapsed >= MORPH1_UNIT_WAIT_MAX_S;
     if (morph1.logoReady && unitOk && elapsed >= MORPH1_FLAT_MIN_S && !window.__morph1Freeze) {

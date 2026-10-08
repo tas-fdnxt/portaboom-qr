@@ -69,6 +69,10 @@ body.motion3{background:#f4efe6}
 body.motion3 canvas#stage:not([data-iqr-ready]){background:#f4efe6}
 body.morph1{background:#f4efe6}
 body.morph1 canvas#stage{background:#f4efe6}
+/* morph1: the still itself is the instant first paint, sized exactly like the WebGL frame 0 (pad = 88% of the short side). */
+#morph1Still{display:none}
+body.morph1 #morph1Still{display:block;position:fixed;left:50%;top:50vh;top:50dvh;width:min(88vw,88vh);height:min(88vw,88vh);width:min(88vw,88dvh);height:min(88vw,88dvh);transform:translate(-50%,-50%);z-index:1;pointer-events:none}
+body.morph1.morph1-live #morph1Still{display:none}
 @media (max-width:480px){
   .dock{gap:7px}
   .btn{padding:12px 14px;font-size:12px;flex:1 1 calc(50% - 8px)}
@@ -76,6 +80,7 @@ body.morph1 canvas#stage{background:#f4efe6}
 </style>
 </head>
 <body class="live-scan">
+<img id="morph1Still" src="./portaboom-morph-qr.svg" alt="" aria-hidden="true">
 <canvas id="stage" aria-label="PORTABOOM PB4000 QR"></canvas>
 <div class="vig" aria-hidden="true"></div>
 <div id="status">Living QR · tap to scan the field</div>
