@@ -4011,8 +4011,8 @@ function morph1DoorPose() {
   if (!boom || !morph1.restReady) return null;
   const { w, h } = morph1ViewSize();
   const aspect = w / h;
-  const savedPos = boom.position.clone();
-  const savedQuat = boom.quaternion.clone();
+  const savedHe = morph1.poseHe ?? 0;
+  const savedSe = morph1.poseSe ?? 0;
   const savedVis = boom.visible;
   const savedArm = boomRig ? boomRig.shownPct : null;
   morph1UnitPose(1, 1);
@@ -4021,8 +4021,8 @@ function morph1DoorPose() {
   boom.updateMatrixWorld(true);
   const lens = morph1LensInfo();
   const body = morph1BodyBox() || m1Box(boom);
-  boom.position.copy(savedPos);
-  boom.quaternion.copy(savedQuat);
+  // Full restore (pose, matte, env intensity) so the measuring pass never shows.
+  morph1UnitPose(savedHe, savedSe);
   boom.visible = savedVis;
   if (boomRig && savedArm != null) applyBoomShown(savedArm);
   boom.updateMatrixWorld(true);
@@ -4230,6 +4230,8 @@ function morph1ApplyMatte(m) {
  */
 function morph1UnitPose(hingeE, slideE) {
   if (!boom || !morph1.restReady) return;
+  morph1.poseHe = hingeE;
+  morph1.poseSe = slideE;
   _m1h.setFromAxisAngle(_m1x, (-Math.PI / 2) * (1 - hingeE));
   boom.quaternion.copy(_m1h).multiply(morph1.restQuat);
   _m1v.copy(morph1.restPos).sub(morph1.pivot).applyQuaternion(_m1h).add(morph1.pivot);
@@ -4623,6 +4625,13 @@ function morph1Tick(dt, t) {
     if (startShowtime()) {
       morph1.phase = "show";
       morph1.marks.showAt = performance.now() - morph1.bootAt;
+      // Showtime sets up its own camera and look; take the frame back at once.
+      morph1Look();
+      scene.environmentIntensity = 1;
+      morph1ApplyCamera(1);
+      morph1TileFloor(1e9);
+      if (morph1.shadow) morph1.shadow.visible = false;
+      if (boom) boom.visible = true;
     }
   }
 }
