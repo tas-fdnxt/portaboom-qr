@@ -36,7 +36,7 @@ button.go{background:var(--orange)}
     <div id="phone"><div id="frameWrap"><iframe id="preview" title="Live preview"></iframe></div></div>
     <div id="bar">
       <div id="row">
-        <select id="mode" aria-label="Version"><option value="morph3">morph3</option></select>
+        <select id="mode" aria-label="Version"><option value="morph3">morph3</option><option value="road">road</option></select>
         <button id="play" class="go" type="button">Pause</button>
         <button id="replay" type="button">Replay</button>
         <span id="time">0.00 s</span>
@@ -84,12 +84,16 @@ function steps() {
   const m0 = scan + fill;
   const end = Math.max(cfg.resolve.start_s + cfg.resolve.duration_s + 0.2, cfg.morph_end_s);
   const show = m0 + Math.max(end, cfg.camera.glide_start_s + cfg.camera.glide_s + cfg.camera.glide_hold_s);
-  const g = cfg.lights.green_s, a = cfg.lights.amber_s, r = cfg.lights.red_hold_s, l = cfg.boom.lower_s;
-  return [
+  const rd = $("mode").value === "road" && cfg.road ? cfg.road : null;
+  const g = rd ? rd.green_s : cfg.lights.green_s, a = rd ? rd.amber_s : cfg.lights.amber_s, r = rd ? rd.red_hold_s : cfg.lights.red_hold_s, l = cfg.boom.lower_s;
+  const leave = rd ? rd.leave_after_s : cfg.boom.leave_after_s;
+  const marks = [
     ["Scan", 0], ["QR fills", scan], ["Lift", m0 + cfg.lift.start_s], ["Flight", m0 + 0.9], ["Assembly", m0 + 2.2],
     ["Resolve", m0 + cfg.resolve.start_s], ["Glide", m0 + cfg.camera.glide_start_s], ["Green", show], ["Amber", show + g],
-    ["Red", show + g + a], ["Boom down", show + g + a + r], ["DEST", show + g + a + r + l + cfg.boom.leave_after_s],
+    ["Red", show + g + a], ["Boom down", show + g + a + r], ["DEST", show + g + a + r + l + leave],
   ];
+  if (rd) marks.splice(6, 0, ["Road builds", m0 + rd.build_start_s]);
+  return marks.sort((x, y) => x[1] - y[1]);
 }
 function drawMarks() {
   const st = steps();
@@ -149,7 +153,7 @@ $("play").onclick = () => {
 };
 $("replay").onclick = () => { curT = 0; load(0, false); };
 $("scrub").addEventListener("change", () => seek(+$("scrub").value, true));
-$("mode").onchange = () => load(0, false);
+$("mode").onchange = () => { drawMarks(); load(0, false); };
 $("reset").onclick = () => {
   if (!confirm("Reset every value to the published morph-config.json?")) return;
   cfg = structuredClone(fileCfg);
@@ -176,10 +180,10 @@ $("clear").onclick = () => { localStorage.removeItem(LIVE_KEY); status("Saved br
 /* ---------- controls ---------- */
 const LABELS = {
   dest: "DEST link (opens at the end)", scan: "Scan", fill: "QR fills the screen", lift: "Lift wave", flight: "Flight",
-  assembly: "Assembly", morph_end_s: "morph ends at (s)", resolve: "Blocks to real unit", camera: "Camera", lights: "Light cycle", boom: "Boom", colours: "Colours", minions: "Minions",
+  assembly: "Assembly", morph_end_s: "morph ends at (s)", resolve: "Blocks to real unit", camera: "Camera", lights: "Light cycle", boom: "Boom", colours: "Colours", minions: "Minions", road: "Road scene (?v=road)",
 };
 const RANGES = [
-  [/passes$/, 1, 6, 1], [/count$/, 10, 400, 1], [/voxel_count$/, 300, 1500, 10], [/_deg$/, 0, 60, 0.5], [/pitch_deg$/, 0, 6, 0.1],
+  [/passes$/, 1, 6, 1], [/^cars$/, 0, 5, 1], [/^workers$/, 0, 3, 1], [/^car_speed$/, 2, 20, 0.5], [/^car_accel$/, 0.5, 6, 0.1], [/^fog_(near|far)$/, 5, 300, 1], [/^build_radius$/, 40, 400, 5], [/count$/, 10, 400, 1], [/voxel_count$/, 300, 1500, 10], [/_deg$/, 0, 60, 0.5], [/pitch_deg$/, 0, 6, 0.1],
   [/fov/, 20, 75, 0.5], [/unit_height/, 0.3, 0.8, 0.005], [/lens_y$/, 0.25, 0.6, 0.005], [/left_margin$/, 0, 0.2, 0.002],
   [/tilt_curve$/, 0.3, 2, 0.01], [/height_cells$/, 0, 4, 0.05], [/speed_cells$/, 4, 60, 1], [/spacing_cells$/, 3, 20, 0.5],
   [/stagger|jitter|arc|tilt$|band|push_in|sweep_ring|lens_flash|recolour|size$/, 0, 2, 0.01], [/spin$/, 0, 3, 0.05],
