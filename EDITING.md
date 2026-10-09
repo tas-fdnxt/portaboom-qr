@@ -20,13 +20,15 @@ Open https://tas-fdnxt.github.io/portaboom-qr/editor.html on a laptop (it also w
 
 Useful settings:
 
-- Scan: `duration_s` (how long the scan runs) and `passes` (how many times the line sweeps).
+- Scan: `auto_start_delay_s` (how long the QR holds still before the scan starts by itself, 0.8 s by default), `duration_s` (how long the scan runs) and `passes` (how many times the line sweeps).
 - QR fills the screen: how long the code takes to grow to full screen.
 - Flight: start time, stagger, duration, arc and spin for the boom, the light head and the body.
 - Blocks to real unit: `style` (`shimmer` is the light wave, `shrink` is the plain version), start, duration, colour and width of the wave, cube flip angle, glowing ring strength, lens flash strength, camera push-in.
 - Camera: framing at the end (`unit_height` is the share of the screen height the unit fills, `unit_height_boom_down` the slightly wider frame once the boom is down, `lens_y` where the lights sit, `left_margin`), `pitch_deg` (0 = eye level), and the glide round the unit (`glide_yaw_deg`, `glide_start_s`, `glide_s`).
 - Light cycle and Boom: green, amber and red times, how long the boom takes to come down, and the pause before the page opens the DEST link.
 - DEST link: the web page that opens at the end.
+
+The page starts on its own (no button), and so does the preview. To get the old "Tap to scan" button for testing, add `&test=1` to the page link, for example https://tas-fdnxt.github.io/portaboom-qr/?v=morph3&test=1.
 
 ## 3. Export
 

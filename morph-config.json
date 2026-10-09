@@ -2,6 +2,7 @@
   "_about": "PORTABOOM morph3 settings. Times are in seconds. Edit with editor.html or by hand, then commit this file. See EDITING.md.",
   "dest": "https://www.trafficaccess.com.au/portaboom-product/portaboom-pb4000-series/",
   "scan": {
+    "auto_start_delay_s": 0.8,
     "duration_s": 1.8,
     "passes": 2
   },

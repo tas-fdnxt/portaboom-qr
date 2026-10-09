@@ -85,6 +85,7 @@ body.morph1 #morph1Scan svg{width:24px;height:24px;flex:none}
 body.morph1 #morph1Scan:focus-visible{outline:3px solid #1B2A4A;outline-offset:3px}
 body.morph1 #morph1Scan.pressed{background:#C95F00;box-shadow:0 2px 8px rgba(238,114,2,.3);transform:translateX(-50%) scale(.96)}
 body.morph1 #morph1Scan[hidden]{display:none}
+body.morph2.morph-auto #morph1Scan{display:none}
 body.morph1 #morph1ScanFx{position:fixed;left:50%;top:50vh;top:50dvh;width:var(--m1q);height:var(--m1q);transform:translate(-50%,-50%);z-index:3;pointer-events:none;overflow:hidden;opacity:0}
 body.morph1.morph1-scanning #morph1ScanFx{display:block}
 #morph1ScanFx .br{position:absolute;width:15%;height:15%;border:0 solid #EE7202}
@@ -175,6 +176,12 @@ body.morph1.morph1-scanning #morph1ScanFx{display:block}
   if (morph1) {
     document.body.classList.add("morph1");
     if (morph2) document.body.classList.add("morph2");
+    // morph2 / morph3 start by themselves; the "Tap to scan" button is only for ?test=1.
+    const autoStart = morph2 && q.get("test") !== "1";
+    if (autoStart) {
+      document.body.classList.add("morph-auto");
+      document.getElementById("morph1Scan")?.setAttribute("hidden", "");
+    }
     // A press before the 3D scene is up is remembered; app.js starts the scan when ready.
     const btn = document.getElementById("morph1Scan");
     if (btn) btn.addEventListener("click", () => { window.__morph1ScanQueued = true; btn.classList.add("pressed"); });
@@ -217,14 +224,14 @@ body.morph1.morph1-scanning #morph1ScanFx{display:block}
       v.preload = "auto";
       if (btn) btn.addEventListener("click", () => window.__morph1Play());
       document.getElementById("morph1Still")?.addEventListener("click", () => window.__morph1Play());
-      if (window.__morph1ScanQueued || q.get("autoplay") === "1") window.__morph1Play();
+      if (window.__morph1ScanQueued || autoStart || q.get("autoplay") === "1") window.__morph1Play();
     };
     // app.js must start; a module that fails to load or link never sets __iqrBooted.
     setTimeout(() => { if (!window.__iqrBooted) window.__morph1Fallback("app-not-started"); }, 15000);
     // Back from DEST via bfcache: start clean instead of resuming a finished run.
     addEventListener("pageshow", (e) => { if (e.persisted) location.reload(); });
   }
-  const src = morph3 ? "./app3.js?b=c48638ba&v=morph3" : morph2 ? "./app.js?b=b034e56e&v=morph2" : morph1 ? "./app.js?b=b034e56e&v=morph1" : motion3 ? "./app.js?b=b034e56e&v=motion3" : motion2 ? "./app.js?b=b034e56e&v=motion2" : motion1 ? "./app.js?b=b034e56e&v=motion1" : "./app.js?b=b034e56e&v=living10";
+  const src = morph3 ? "./app3.js?b=609021df&v=morph3" : morph2 ? "./app.js?b=0dc75376&v=morph2" : morph1 ? "./app.js?b=0dc75376&v=morph1" : motion3 ? "./app.js?b=0dc75376&v=motion3" : motion2 ? "./app.js?b=0dc75376&v=motion2" : motion1 ? "./app.js?b=0dc75376&v=motion1" : "./app.js?b=0dc75376&v=living10";
   const s = document.createElement("script");
   s.type = "module";
   s.src = src;

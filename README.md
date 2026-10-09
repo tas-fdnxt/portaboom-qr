@@ -12,3 +12,5 @@ Files: `index.html` (loader), `app.js` (scene and timeline), `morph2-art.js` + `
 PORTABOOM is a registered trade mark. QR Code is a registered trade mark of DENSO WAVE INCORPORATED.
 
 Alternative cut for comparison: https://tas-fdnxt.github.io/portaboom-qr/?v=morph3 starts from the same QR and scan, grows the code to fill the screen, builds the unit with a light wave that turns the blocks into the real PB4000, and frames the whole unit with more of the boom in shot after a slow camera glide (`app3.js`, fallback video `morph3.mp4`). Its timings, camera and colours are in `morph-config.json`; edit them in https://tas-fdnxt.github.io/portaboom-qr/editor.html (see `EDITING.md`).
+
+Starting: the page starts by itself. Once the 3D scene has drawn the QR it holds the code for a moment (0.8 s), runs the double scan sweep and carries on into the morph, so nobody has to press anything. For testing, add `&test=1` (or `?test=1`) to the link: a "Tap to scan" button appears under the code and the page waits for a tap. `autoplay=1` is accepted and behaves like the default. If 3D is not available the recorded video plays in the same place, muted, by itself.

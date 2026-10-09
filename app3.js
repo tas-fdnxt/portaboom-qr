@@ -19,7 +19,7 @@ import {
  * it live. Order of precedence: built-in defaults < morph-config.json <
  * ?config=<url> < this browser's saved override (localStorage).
  * ------------------------------------------------------------------ */
-const MORPH_DEFAULTS = {"_about":"PORTABOOM morph3 settings. Times are in seconds. Edit with editor.html or by hand, then commit this file. See EDITING.md.","dest":"https://www.trafficaccess.com.au/portaboom-product/portaboom-pb4000-series/","scan":{"duration_s":1.8,"passes":2},"fill":{"duration_s":0.9,"pop_s":0.4},"lift":{"start_s":0.12,"spread_s":0.55,"duration_s":0.75,"height_cells":1.2,"tilt":0.55,"print_fade_s":0.75},"flight":{"boom":{"start_s":0.3,"stagger_dist":0.35,"stagger_height":0.95,"jitter_s":0.04,"duration_s":1.25,"duration_jitter_s":0.1,"arc":0.18,"spin":0.25},"head":{"start_s":0.45,"stagger_dist":0.1,"stagger_height":1.45,"stagger_across":0.2,"jitter_s":0.02,"duration_s":0.85,"duration_jitter_s":0.06,"arc":0.12,"spin":0.15},"body":{"start_s":0.22,"stagger_dist":0.5,"stagger_height":0.85,"jitter_s":0.08,"duration_s":1.35,"duration_jitter_s":0.25,"arc":0.35,"spin":0.8},"recolour_from":0.45,"recolour_over":0.35},"assembly":{"voxel_count":1100,"floor_ripple":true,"ripple_speed_cells":26,"ripple_height_cells":0.35},"resolve":{"style":"shimmer","start_s":3.3,"duration_s":1.3,"shimmer_color":"#FFD27A","shimmer_band":0.2,"flip_deg":90,"sweep_ring":0.85,"lens_flash":1.0,"push_in":0.05},"morph_end_s":4.8,"camera":{"tilt_start_s":0.05,"tilt_end_s":3.55,"tilt_curve":0.72,"fov_portrait":50,"fov_wide":34,"unit_height":0.49,"unit_height_boom_down":0.415,"lens_y":0.44,"left_margin":0.015,"pitch_deg":0,"glide_yaw_deg":18,"glide_start_s":3.6,"glide_s":2.6,"glide_hold_s":0.3},"lights":{"green_s":0.5,"amber_s":1.0,"red_hold_s":0.5},"boom":{"lower_s":1.0,"leave_after_s":0.4},"colours":{"lens_red":"#FF3A2E","lens_amber":"#FFAA1C","lens_green":"#2CCB68","boom_red":"#C8102E","boom_white":"#F4F4F2","floor":"#34466B","sky_top":"#D7E0EA","horizon":"#F1ECE3","ground":"#E3DACB"}};
+const MORPH_DEFAULTS = {"_about":"PORTABOOM morph3 settings. Times are in seconds. Edit with editor.html or by hand, then commit this file. See EDITING.md.","dest":"https://www.trafficaccess.com.au/portaboom-product/portaboom-pb4000-series/","scan":{"auto_start_delay_s":0.8,"duration_s":1.8,"passes":2},"fill":{"duration_s":0.9,"pop_s":0.4},"lift":{"start_s":0.12,"spread_s":0.55,"duration_s":0.75,"height_cells":1.2,"tilt":0.55,"print_fade_s":0.75},"flight":{"boom":{"start_s":0.3,"stagger_dist":0.35,"stagger_height":0.95,"jitter_s":0.04,"duration_s":1.25,"duration_jitter_s":0.1,"arc":0.18,"spin":0.25},"head":{"start_s":0.45,"stagger_dist":0.1,"stagger_height":1.45,"stagger_across":0.2,"jitter_s":0.02,"duration_s":0.85,"duration_jitter_s":0.06,"arc":0.12,"spin":0.15},"body":{"start_s":0.22,"stagger_dist":0.5,"stagger_height":0.85,"jitter_s":0.08,"duration_s":1.35,"duration_jitter_s":0.25,"arc":0.35,"spin":0.8},"recolour_from":0.45,"recolour_over":0.35},"assembly":{"voxel_count":1100,"floor_ripple":true,"ripple_speed_cells":26,"ripple_height_cells":0.35},"resolve":{"style":"shimmer","start_s":3.3,"duration_s":1.3,"shimmer_color":"#FFD27A","shimmer_band":0.2,"flip_deg":90,"sweep_ring":0.85,"lens_flash":1.0,"push_in":0.05},"morph_end_s":4.8,"camera":{"tilt_start_s":0.05,"tilt_end_s":3.55,"tilt_curve":0.72,"fov_portrait":50,"fov_wide":34,"unit_height":0.49,"unit_height_boom_down":0.415,"lens_y":0.44,"left_margin":0.015,"pitch_deg":0,"glide_yaw_deg":18,"glide_start_s":3.6,"glide_s":2.6,"glide_hold_s":0.3},"lights":{"green_s":0.5,"amber_s":1.0,"red_hold_s":0.5},"boom":{"lower_s":1.0,"leave_after_s":0.4},"colours":{"lens_red":"#FF3A2E","lens_amber":"#FFAA1C","lens_green":"#2CCB68","boom_red":"#C8102E","boom_white":"#F4F4F2","floor":"#34466B","sky_top":"#D7E0EA","horizon":"#F1ECE3","ground":"#E3DACB"}};
 const editorMode = new URLSearchParams(location.search).get("editor") === "1";
 function cfgMerge(base, over) {
   if (!over || typeof over !== "object" || Array.isArray(over)) return base;
@@ -3766,8 +3766,15 @@ const MORPH1_SCAN_FOV = 0.5;
 const MORPH1_SCAN_DIST = 12;
 /** Simulated scan: focus brackets + scan line over the QR before the morph. */
 const MORPH1_SWEEP_S = 0.8;
-/** ?autoplay=1 starts the scan by itself (video, receipts); otherwise the page waits for a tap. */
-const morph1Autoplay = pageParams.get("autoplay") === "1";
+/**
+ * morph2 / morph3 / minions start by themselves: once the canvas has taken over from the still,
+ * the QR holds for a short beat and the scan runs with no input (real scanners never see a button).
+ * ?test=1 shows the "Tap to scan" button and waits for a tap; ?autoplay=1 is an alias of the default.
+ */
+const morph1TestMode = pageParams.get("test") === "1";
+const morph1Autoplay = pageParams.get("autoplay") === "1" || (morph2Wanted && !morph1TestMode);
+/** Still hold between the canvas being ready and the automatic scan (s). */
+const MORPH1_AUTO_DELAY_S = Math.min(3, Math.max(0, Number(CFG.scan?.auto_start_delay_s ?? 0.8)));
 /** Nudge of the lying silhouette from centre, in modules (x, z). */
 const MORPH1_LYING_SHIFT = [1.6, -0.5];
 /** Where the unit stands at the end, as a fraction of the pad (negative = far side); centred in x. */
@@ -4716,7 +4723,7 @@ function morph1BeginScan() {
   }
   if (morph2Wanted) return; // morph2 buzzes on the finder lock instead
   try {
-    if (navigator.vibrate) navigator.vibrate([18, 40, 28]);
+    if (navigator.vibrate && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) navigator.vibrate([18, 40, 28]);
   } catch (err) {
     // vibration is optional
   }
@@ -4859,8 +4866,9 @@ function morph1Tick(dt, t) {
     }
     // The scan (and with it the morph) only starts once the canvas has replaced the still.
     if (unitOk && morph1.restReady && morph1.handedOver && (!morph2Wanted || morph2.ready) && !window.__morph1Freeze) {
+      if (morph1.readyAt == null) { morph1.readyAt = now; morph1.marks.readyAt = now - morph1.bootAt; }
       if (morph1.scanQueued) morph1BeginScan();
-      else if (morph1Autoplay && elapsed >= MORPH1_FLAT_MIN_S) morph1BeginScan();
+      else if (morph1Autoplay && (morph2Wanted ? (now - morph1.readyAt) / 1000 >= MORPH1_AUTO_DELAY_S : elapsed >= MORPH1_FLAT_MIN_S)) morph1BeginScan();
     }
     return;
   }
@@ -4992,6 +5000,8 @@ function morph1Snapshot() {
     scanFrac: MORPH1_SCAN_FRAC,
     scanPadPx: morph1PadPx(),
     autoplay: morph1Autoplay,
+    testMode: morph1TestMode,
+    readyAt: morph1.marks.readyAt ?? null,
     marks: { ...morph1.marks },
     riseEnd: morph1.riseEnd,
     hingeDeg: morph1.hingeDeg ?? (morph1.phase === "flat" ? 90 : 0),
@@ -6043,7 +6053,7 @@ function morph2ScanFx(p) {
     morph2.scanBuzzed = true;
     morph1.marks.lockAt = performance.now() - morph1.bootAt;
     try {
-      if (navigator.vibrate) navigator.vibrate([16, 45, 26]);
+      if (navigator.vibrate && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) navigator.vibrate([16, 45, 26]);
     } catch (err) {
       // vibration is optional
     }
