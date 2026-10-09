@@ -168,7 +168,7 @@ function NodePanel({R,N,id,state,set}){
     keys.length ? h(F,null, h('h3',null,'Settings in morph-config.json'),
       runtime && !V.config ? h('div',{className:'note'}, v+' ignores morph-config.json; these keys apply from morph3 on.') : null,
       h('table',null, h('thead',null,h('tr',null,h('th',null,'key'),h('th',null,'value'),h('th',null,'editor range'),h('th',null,'what it does / read at'))),
-        h('tbody',null, keys.map(k=>{ const K=R.keys[k]||{}; const reads=(K.read_at||[]).filter(r=>!runtime||files.has(r.file));
+        h('tbody',null, keys.map(k=>{ const K=R.keys[k]||{}; const seen=new Set(); const reads=(K.read_at||[]).filter(r=>(!runtime||files.has(r.file)) && !seen.has(r.url) && seen.add(r.url));
           return h('tr',{key:k}, h('td',null,h('code',null,k)), h('td',null,h('code',null,JSON.stringify(K.value))), h('td',null,K.editor_range? h('code',null,JSON.stringify(K.editor_range)) : (R.code_only_keys[k]?'code only':'-')),
             h('td',null, K.what||'', reads.length? h('div',{className:'muted'}, 'read at ', reads.slice(0,6).map((r,i)=>h(F,{key:i}, i?', ':'', A(r.url, r.file+':'+r.line)))) : null)); })))) : null,
     runtime ? h(F,null, h('h3',null,'Versions with this step'),
