@@ -1,0 +1,20 @@
+{
+  "dependencies": [
+    "."
+  ],
+  "graphs": {
+    "qr_morph1": "./studio_graph.py:morph1",
+    "qr_morph2": "./studio_graph.py:morph2",
+    "qr_morph3": "./studio_graph.py:morph3",
+    "qr_road": "./studio_graph.py:road",
+    "qr_minions": "./studio_graph.py:minions",
+    "qr_minions2": "./studio_graph.py:minions2",
+    "qr_night": "./studio_graph.py:night",
+    "qr_blueprint": "./studio_graph.py:blueprint",
+    "qr_rain": "./studio_graph.py:rain",
+    "qr_domino": "./studio_graph.py:domino",
+    "qr_domino2": "./studio_graph.py:domino2",
+    "qr_drone": "./studio_graph.py:drone",
+    "qr_build": "./studio_graph.py:build"
+  }
+}

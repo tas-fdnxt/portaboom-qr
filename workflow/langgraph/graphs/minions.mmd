@@ -1,0 +1,46 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	r_boot(r_boot)
+	r_frame0(r_frame0)
+	r_hold(r_hold)
+	r_scan(r_scan)
+	r_fill(r_fill)
+	minis_spawn(minis_spawn)
+	minis_life(minis_life)
+	r_lift(r_lift)
+	r_fly(r_fly)
+	r_assemble(r_assemble)
+	r_resolve(r_resolve)
+	r_camera(r_camera)
+	r_env(r_env)
+	minis_lineup(minis_lineup)
+	r_lights(r_lights)
+	r_boom(r_boom)
+	r_dest(r_dest)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> r_boot;
+	minis_life --> r_lift;
+	minis_lineup --> r_lights;
+	minis_spawn --> minis_life;
+	r_assemble --> r_resolve;
+	r_boom --> r_dest;
+	r_boot --> r_frame0;
+	r_camera --> r_env;
+	r_env --> minis_lineup;
+	r_fill --> minis_spawn;
+	r_fly --> r_assemble;
+	r_frame0 --> r_hold;
+	r_hold --> r_scan;
+	r_lift --> r_fly;
+	r_lights --> r_boom;
+	r_resolve --> r_camera;
+	r_scan --> r_fill;
+	r_dest --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

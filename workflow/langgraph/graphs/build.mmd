@@ -1,0 +1,32 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	b_art_bake(b_art_bake)
+	b_qr_encode(b_qr_encode)
+	b_decode_check(b_decode_check)
+	b_frame0_match(b_frame0_match)
+	b_version_scaffold(b_version_scaffold)
+	b_config_editor(b_config_editor)
+	b_video_render(b_video_render)
+	b_device_tests(b_device_tests)
+	b_security_sweep(b_security_sweep)
+	b_publish(b_publish)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> b_art_bake;
+	b_art_bake --> b_qr_encode;
+	b_config_editor --> b_video_render;
+	b_decode_check --> b_frame0_match;
+	b_device_tests --> b_security_sweep;
+	b_frame0_match --> b_version_scaffold;
+	b_qr_encode --> b_decode_check;
+	b_security_sweep --> b_publish;
+	b_version_scaffold --> b_config_editor;
+	b_video_render --> b_device_tests;
+	b_publish --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

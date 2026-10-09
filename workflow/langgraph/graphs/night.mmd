@@ -1,0 +1,48 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	r_boot(r_boot)
+	r_frame0(r_frame0)
+	r_hold(r_hold)
+	r_scan(r_scan)
+	r_fill(r_fill)
+	night_fade(night_fade)
+	r_lift(r_lift)
+	r_fly(r_fly)
+	night_fly(night_fly)
+	r_assemble(r_assemble)
+	r_resolve(r_resolve)
+	night_road(night_road)
+	r_camera(r_camera)
+	r_env(r_env)
+	r_lights(r_lights)
+	night_lights(night_lights)
+	r_boom(r_boom)
+	r_dest(r_dest)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> r_boot;
+	night_fade --> r_lift;
+	night_fly --> r_assemble;
+	night_lights --> r_boom;
+	night_road --> r_camera;
+	r_assemble --> r_resolve;
+	r_boom --> r_dest;
+	r_boot --> r_frame0;
+	r_camera --> r_env;
+	r_env --> r_lights;
+	r_fill --> night_fade;
+	r_fly --> night_fly;
+	r_frame0 --> r_hold;
+	r_hold --> r_scan;
+	r_lift --> r_fly;
+	r_lights --> night_lights;
+	r_resolve --> night_road;
+	r_scan --> r_fill;
+	r_dest --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

@@ -1,0 +1,32 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	r_boot(r_boot)
+	r_frame0(r_frame0)
+	r_hold(r_hold)
+	r_scan(r_scan)
+	m1_hinge(m1_hinge)
+	r_camera(r_camera)
+	r_env(r_env)
+	r_lights(r_lights)
+	r_boom(r_boom)
+	r_dest(r_dest)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> r_boot;
+	m1_hinge --> r_camera;
+	r_boom --> r_dest;
+	r_boot --> r_frame0;
+	r_camera --> r_env;
+	r_env --> r_lights;
+	r_frame0 --> r_hold;
+	r_hold --> r_scan;
+	r_lights --> r_boom;
+	r_scan --> m1_hinge;
+	r_dest --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
