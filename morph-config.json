@@ -338,5 +338,24 @@
         "glide_start_s": 4.3
       }
     }
+  },
+  "domino2": {
+    "_about": "Only used by ?v=domino2. Anything not set here comes from domino.",
+    "count": 240,
+    "size": 0.13,
+    "size_mix": 0.4,
+    "yaw_jitter": 0.7,
+    "grid": 0.09,
+    "reach_x": 9,
+    "reach_back": 9,
+    "max_depth": 40,
+    "depth_grow": 0.8,
+    "ring": 0.55,
+    "path_clear": 0.08,
+    "front_min_scale": 0.35,
+    "hero_clear": 0.05,
+    "ripple_spread": 0.6,
+    "salute_jitter_s": 0.18,
+    "salute_lead": 0.3
   }
 }

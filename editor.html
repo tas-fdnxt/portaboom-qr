@@ -36,7 +36,7 @@ button.go{background:var(--orange)}
     <div id="phone"><div id="frameWrap"><iframe id="preview" title="Live preview"></iframe></div></div>
     <div id="bar">
       <div id="row">
-        <select id="mode" aria-label="Version"><option value="morph3">morph3</option><option value="road">road</option><option value="minions">minions</option><option value="minions2">minions2</option><option value="domino">domino</option><option value="night">night</option><option value="drone">drone</option><option value="blueprint">blueprint</option><option value="rain">rain</option></select>
+        <select id="mode" aria-label="Version"><option value="morph3">morph3</option><option value="road">road</option><option value="minions">minions</option><option value="minions2">minions2</option><option value="domino">domino</option><option value="domino2">domino2</option><option value="night">night</option><option value="drone">drone</option><option value="blueprint">blueprint</option><option value="rain">rain</option></select>
         <button id="play" class="go" type="button">Pause</button>
         <button id="replay" type="button">Replay</button>
         <span id="time">0.00 s</span>
@@ -83,7 +83,7 @@ function steps() {
   const fill = cfg.fill.duration_s;
   const m0 = scan + fill;
   // domino: the hero's flight, resolve and glide all start domino.delay_s later.
-  const dm = $("mode").value === "domino" && cfg.domino ? cfg.domino : null;
+  const dm = ($("mode").value === "domino" || $("mode").value === "domino2") && cfg.domino ? ($("mode").value === "domino2" ? { ...cfg.domino, ...(cfg.domino2 || {}) } : cfg.domino) : null;
   // drone: the same delay, and the glide is replaced by the drone's swoop down to the road.
   const dr = $("mode").value === "drone" && cfg.drone ? cfg.drone : null;
   const dl = dm ? dm.delay_s : dr ? dr.delay_s : 0;
@@ -201,10 +201,10 @@ $("clear").onclick = () => { localStorage.removeItem(LIVE_KEY); status("Saved br
 /* ---------- controls ---------- */
 const LABELS = {
   dest: "DEST link (opens at the end)", scan: "Scan", fill: "QR fills the screen", lift: "Lift wave", flight: "Flight",
-  assembly: "Assembly", morph_end_s: "morph ends at (s)", resolve: "Blocks to real unit", camera: "Camera", lights: "Light cycle", boom: "Boom", colours: "Colours", minions: "Minions (?v=minions)", minions2: "Minions everywhere (?v=minions2)", domino: "Domino guard of honour (?v=domino)", drone: "Drone view to the road (?v=drone)", road: "Road scene (?v=road)",
+  assembly: "Assembly", morph_end_s: "morph ends at (s)", resolve: "Blocks to real unit", camera: "Camera", lights: "Light cycle", boom: "Boom", colours: "Colours", minions: "Minions (?v=minions)", minions2: "Minions everywhere (?v=minions2)", domino: "Domino guard of honour (?v=domino)", domino2: "Domino crowd everywhere (?v=domino2; anything not set comes from Domino)", drone: "Drone view to the road (?v=drone)", road: "Road scene (?v=road)",
 };
 const RANGES = [
-  [/^lines_per_side$/, 1, 4, 1], [/^(row|line)_gap$/, 0.08, 0.8, 0.005], [/^max_rows$/, 4, 60, 1], [/^dolly_start$/, 1, 3, 0.01], [/^aisle_width$/, 0.3, 1.5, 0.01], [/^(camera|look)_height$/, 0.1, 1.2, 0.01], [/^(first_row|salute_lead)$/, 0, 1.5, 0.01], [/^overshoot$/, 0, 0.4, 0.01], [/^centre_[xz]$/, -4, 4, 0.05], [/^swoop_side$/, -10, 10, 0.1], [/^swoop_back$/, 0, 1.5, 0.01], [/^bank_deg$/, 0, 25, 0.5], [/^random$/, 0, 1, 0.01],
+  [/^lines_per_side$/, 1, 4, 1], [/^(row|line)_gap$/, 0.08, 0.8, 0.005], [/^max_rows$/, 4, 60, 1], [/^dolly_start$/, 1, 3, 0.01], [/^aisle_width$/, 0.3, 1.5, 0.01], [/^(camera|look)_height$/, 0.1, 1.2, 0.01], [/^(first_row|salute_lead)$/, 0, 1.5, 0.01], [/^overshoot$/, 0, 0.4, 0.01], [/^count$/, 20, 400, 1], [/^size_mix$/, 0, 0.9, 0.01], [/^yaw_jitter$/, 0, 2, 0.01], [/^(reach_x|reach_back)$/, 1, 20, 0.1], [/^ripple_spread$/, 0, 2, 0.01], [/^centre_[xz]$/, -4, 4, 0.05], [/^swoop_side$/, -10, 10, 0.1], [/^swoop_back$/, 0, 1.5, 0.01], [/^bank_deg$/, 0, 25, 0.5], [/^random$/, 0, 1, 0.01],
   [/^count$/, 30, 300, 1], [/^ring$/, 0.2, 1.5, 0.01], [/^hero_clear$/, 0, 0.3, 0.005], [/^depth_grow$/, 0, 1.5, 0.01], [/^max_depth$/, 10, 120, 1], [/^reach_cells$/, 0, 120, 1], [/^rows$/, 1, 6, 1], [/_gap$/, 0.2, 1.2, 0.01], [/^bob$/, 0, 0.4, 0.01], [/_hz$/, 0.5, 5, 0.05], [/arm_length$/, 0.3, 1.4, 0.01],
   [/passes$/, 1, 6, 1], [/^cars$/, 0, 5, 1], [/^workers$/, 0, 3, 1], [/^car_speed$/, 2, 20, 0.5], [/^car_accel$/, 0.5, 6, 0.1], [/^fog_(near|far)$/, 5, 300, 1], [/^build_radius$/, 40, 400, 5], [/count$/, 10, 400, 1], [/voxel_count$/, 300, 1500, 10], [/_deg$/, 0, 60, 0.5], [/pitch_deg$/, 0, 6, 0.1],
   [/fov/, 20, 75, 0.5], [/unit_height/, 0.3, 0.8, 0.005], [/lens_y$/, 0.25, 0.6, 0.005], [/left_margin$/, 0, 0.2, 0.002],
