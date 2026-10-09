@@ -1,0 +1,44 @@
+---
+title: PORTABOOM QR road (app-road.js)
+---
+flowchart TD
+  r_boot["Boot: pick version, load settings"]
+  r_frame0["Frame 0: the still, then the canvas takes over"]
+  r_hold["Hold on the QR, then auto-start"]
+  r_scan["Scan sweep + finder lock + buzz"]
+  r_fill["QR grows to fill the screen"]
+  r_lift["Lift wave: modules lift off the page"]
+  r_fly["Flight: drawn modules fly to the unit"]
+  r_assemble["Voxel PORTABOOM assembles"]
+  r_resolve["Blocks turn into the real unit"]
+  road_build(["road: worksite builds outward"])
+  road_fog(["road: haze"])
+  r_camera["Camera: top-down to eye level, glide, framing"]
+  r_env["Sky, horizon, ground and floor colours"]
+  road_preshow(["road: boom down, wait, up before green"])
+  r_lights["Light cycle: green, amber, red"]
+  road_traffic(["road: cars, controllers, light cycle"])
+  r_boom["Boom comes down"]
+  r_dest["Leave to the DEST page"]
+  __start__((start)) --> r_boot
+  r_boot --> r_frame0
+  r_frame0 --> r_hold
+  r_hold --> r_scan
+  r_scan --> r_fill
+  r_fill --> r_lift
+  r_lift --> r_fly
+  r_fly --> r_assemble
+  r_assemble --> r_resolve
+  r_resolve --> road_build
+  road_build --> road_fog
+  road_fog --> r_camera
+  r_camera --> r_env
+  r_env --> road_preshow
+  road_preshow --> r_lights
+  r_lights --> road_traffic
+  road_traffic --> r_boom
+  r_boom --> r_dest
+  r_dest --> __end__((DEST))
+  classDef own fill:#FFE2C2,stroke:#EE7202,color:#1B2A4A
+  class road_build,road_fog,road_preshow,road_traffic own
+  classDef default fill:#EEF2FA,stroke:#1B2A4A,color:#1B2A4A

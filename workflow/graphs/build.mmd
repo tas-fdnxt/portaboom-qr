@@ -1,0 +1,20 @@
+flowchart LR
+  b_art_bake["Art bake: GLB to module drawing"]
+  b_qr_encode["QR encode: URL + art into one code"]
+  b_decode_check["Decode check (gate)"]
+  b_frame0_match["Frame-0 match (gate)"]
+  b_version_scaffold["Make the version file"]
+  b_config_editor["Settings file + editor"]
+  b_video_render["Fallback video render"]
+  b_device_tests["Device and geometry tests (gate)"]
+  b_security_sweep["Public-safety sweep (gate)"]
+  b_publish["Publish to GitHub Pages"]
+  b_art_bake --> b_qr_encode
+  b_qr_encode --> b_decode_check
+  b_decode_check --> b_frame0_match
+  b_frame0_match --> b_version_scaffold
+  b_version_scaffold --> b_config_editor
+  b_config_editor --> b_video_render
+  b_video_render --> b_device_tests
+  b_device_tests --> b_security_sweep
+  b_security_sweep --> b_publish

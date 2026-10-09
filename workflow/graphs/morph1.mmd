@@ -1,0 +1,28 @@
+---
+title: PORTABOOM QR morph1 (app.js)
+---
+flowchart TD
+  r_boot["Boot: pick version, load settings"]
+  r_frame0["Frame 0: the still, then the canvas takes over"]
+  r_hold["Hold on the QR, then auto-start"]
+  r_scan["Scan sweep + finder lock + buzz"]
+  m1_hinge(["morph1: unit hinges upright"])
+  r_camera["Camera: top-down to eye level, glide, framing"]
+  r_env["Sky, horizon, ground and floor colours"]
+  r_lights["Light cycle: green, amber, red"]
+  r_boom["Boom comes down"]
+  r_dest["Leave to the DEST page"]
+  __start__((start)) --> r_boot
+  r_boot --> r_frame0
+  r_frame0 --> r_hold
+  r_hold --> r_scan
+  r_scan --> m1_hinge
+  m1_hinge --> r_camera
+  r_camera --> r_env
+  r_env --> r_lights
+  r_lights --> r_boom
+  r_boom --> r_dest
+  r_dest --> __end__((DEST))
+  classDef own fill:#FFE2C2,stroke:#EE7202,color:#1B2A4A
+  class m1_hinge own
+  classDef default fill:#EEF2FA,stroke:#1B2A4A,color:#1B2A4A
