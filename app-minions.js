@@ -15,14 +15,15 @@ import {
 
 /* ------------------------------------------------------------------
  * app-minions.js: the ?v=minions cut. It is app3.js (morph3) plus a crowd
- * of little PORTABOOMs; all minions code is marked "minions".
+ * of little PORTABOOMs; all minions code is marked "minions". ?v=minions2
+ * runs the same file with a crowd that covers the whole floor (minions2).
  *
  * Editable settings. Everything a person may want to tune lives in
  * morph-config.json next to this file (see EDITING.md); editor.html edits
  * it live. Order of precedence: built-in defaults < morph-config.json <
  * ?config=<url> < this browser's saved override (localStorage).
  * ------------------------------------------------------------------ */
-const MORPH_DEFAULTS = {"_about":"PORTABOOM morph3 settings. Times are in seconds. Edit with editor.html or by hand, then commit this file. See EDITING.md.","dest":"https://www.trafficaccess.com.au/portaboom-product/portaboom-pb4000-series/","scan":{"auto_start_delay_s":0.8,"duration_s":1.8,"passes":2},"fill":{"duration_s":0.9,"pop_s":0.4},"lift":{"start_s":0.12,"spread_s":0.55,"duration_s":0.75,"height_cells":1.2,"tilt":0.55,"print_fade_s":0.75},"flight":{"boom":{"start_s":0.3,"stagger_dist":0.35,"stagger_height":0.95,"jitter_s":0.04,"duration_s":1.25,"duration_jitter_s":0.1,"arc":0.18,"spin":0.25},"head":{"start_s":0.45,"stagger_dist":0.1,"stagger_height":1.45,"stagger_across":0.2,"jitter_s":0.02,"duration_s":0.85,"duration_jitter_s":0.06,"arc":0.12,"spin":0.15},"body":{"start_s":0.22,"stagger_dist":0.5,"stagger_height":0.85,"jitter_s":0.08,"duration_s":1.35,"duration_jitter_s":0.25,"arc":0.35,"spin":0.8},"recolour_from":0.45,"recolour_over":0.35},"assembly":{"voxel_count":1100,"floor_ripple":true,"ripple_speed_cells":26,"ripple_height_cells":0.35},"resolve":{"style":"shimmer","start_s":3.3,"duration_s":1.3,"shimmer_color":"#FFD27A","shimmer_band":0.2,"flip_deg":90,"sweep_ring":0.85,"lens_flash":1.0,"push_in":0.05},"morph_end_s":4.8,"camera":{"tilt_start_s":0.05,"tilt_end_s":3.55,"tilt_curve":0.72,"fov_portrait":50,"fov_wide":34,"unit_height":0.49,"unit_height_boom_down":0.415,"lens_y":0.44,"left_margin":0.015,"pitch_deg":0,"glide_yaw_deg":18,"glide_start_s":3.6,"glide_s":2.6,"glide_hold_s":0.3},"lights":{"green_s":0.5,"amber_s":1.0,"red_hold_s":0.5},"boom":{"lower_s":1.0,"leave_after_s":0.4},"colours":{"lens_red":"#FF3A2E","lens_amber":"#FFAA1C","lens_green":"#2CCB68","boom_red":"#C8102E","boom_white":"#F4F4F2","floor":"#34466B","sky_top":"#D7E0EA","horizon":"#F1ECE3","ground":"#E3DACB"},"road":{"_about":"Only used by ?v=road: the worksite road scene that builds outward from the unit. cars 0-5, workers 0-3, speeds in m/s.","build_start_s":2.9,"build_s":3.4,"build_radius":280,"cars":4,"car_speed":9,"car_accel":2.4,"workers":3,"fog_near":16,"fog_far":125,"green_s":2.4,"amber_s":1.0,"red_hold_s":0.6,"leave_after_s":1.6,"colours":{"sky_top":"#8FB4DA","horizon":"#E4EAEE","asphalt":"#4A4E55","grass":"#6E8B4E","line":"#F2F1EA","kerb":"#BDB9B0","cone":"#FF5B0A","sign":"#FFB81C","hivis":"#FF6A00","tree_a":"#4F7A3C","tree_b":"#3E6533","tree_c":"#6F8F5E","hills":"#9DB09A","work_ute":"#F2F3F0","build_glow":"#FFB347"}},"minions":{"_about":"Only used by ?v=minions: little PORTABOOMs pop up out of the QR modules, bob, run their own lights and boom out of sync, then line up in rows behind the hero and follow its lights and boom. count 30-80, size is the mini's height as a share of the hero, times in seconds after the QR fills the screen.","count":60,"spacing_cells":10,"size":0.27,"pop_start_s":0.1,"pop_spread_s":1.2,"pop_s":0.45,"stand_up_s":1.0,"stand_up_spread_s":0.6,"bob":0.1,"bob_hz":2.2,"cycle_s":2.6,"arm_length":0.85,"duck_s":1.6,"line_up_s":3.7,"line_up_duration_s":1.2,"rows":4,"row_gap":0.36,"col_gap":0.3}};
+const MORPH_DEFAULTS = {"_about":"PORTABOOM morph3 settings. Times are in seconds. Edit with editor.html or by hand, then commit this file. See EDITING.md.","dest":"https://www.trafficaccess.com.au/portaboom-product/portaboom-pb4000-series/","scan":{"auto_start_delay_s":0.8,"duration_s":1.8,"passes":2},"fill":{"duration_s":0.9,"pop_s":0.4},"lift":{"start_s":0.12,"spread_s":0.55,"duration_s":0.75,"height_cells":1.2,"tilt":0.55,"print_fade_s":0.75},"flight":{"boom":{"start_s":0.3,"stagger_dist":0.35,"stagger_height":0.95,"jitter_s":0.04,"duration_s":1.25,"duration_jitter_s":0.1,"arc":0.18,"spin":0.25},"head":{"start_s":0.45,"stagger_dist":0.1,"stagger_height":1.45,"stagger_across":0.2,"jitter_s":0.02,"duration_s":0.85,"duration_jitter_s":0.06,"arc":0.12,"spin":0.15},"body":{"start_s":0.22,"stagger_dist":0.5,"stagger_height":0.85,"jitter_s":0.08,"duration_s":1.35,"duration_jitter_s":0.25,"arc":0.35,"spin":0.8},"recolour_from":0.45,"recolour_over":0.35},"assembly":{"voxel_count":1100,"floor_ripple":true,"ripple_speed_cells":26,"ripple_height_cells":0.35},"resolve":{"style":"shimmer","start_s":3.3,"duration_s":1.3,"shimmer_color":"#FFD27A","shimmer_band":0.2,"flip_deg":90,"sweep_ring":0.85,"lens_flash":1.0,"push_in":0.05},"morph_end_s":4.8,"camera":{"tilt_start_s":0.05,"tilt_end_s":3.55,"tilt_curve":0.72,"fov_portrait":50,"fov_wide":34,"unit_height":0.49,"unit_height_boom_down":0.415,"lens_y":0.44,"left_margin":0.015,"pitch_deg":0,"glide_yaw_deg":18,"glide_start_s":3.6,"glide_s":2.6,"glide_hold_s":0.3},"lights":{"green_s":0.5,"amber_s":1.0,"red_hold_s":0.5},"boom":{"lower_s":1.0,"leave_after_s":0.4},"colours":{"lens_red":"#FF3A2E","lens_amber":"#FFAA1C","lens_green":"#2CCB68","boom_red":"#C8102E","boom_white":"#F4F4F2","floor":"#34466B","sky_top":"#D7E0EA","horizon":"#F1ECE3","ground":"#E3DACB"},"road":{"_about":"Only used by ?v=road: the worksite road scene that builds outward from the unit. cars 0-5, workers 0-3, speeds in m/s.","build_start_s":2.9,"build_s":3.4,"build_radius":280,"cars":4,"car_speed":9,"car_accel":2.4,"workers":3,"fog_near":16,"fog_far":125,"green_s":2.4,"amber_s":1.0,"red_hold_s":0.6,"leave_after_s":1.6,"colours":{"sky_top":"#8FB4DA","horizon":"#E4EAEE","asphalt":"#4A4E55","grass":"#6E8B4E","line":"#F2F1EA","kerb":"#BDB9B0","cone":"#FF5B0A","sign":"#FFB81C","hivis":"#FF6A00","tree_a":"#4F7A3C","tree_b":"#3E6533","tree_c":"#6F8F5E","hills":"#9DB09A","work_ute":"#F2F3F0","build_glow":"#FFB347"}},"minions":{"_about":"Only used by ?v=minions: little PORTABOOMs pop up out of the QR modules, bob, run their own lights and boom out of sync, then line up in rows behind the hero and follow its lights and boom. count 30-80, size is the mini's height as a share of the hero, times in seconds after the QR fills the screen.","count":60,"spacing_cells":10,"size":0.27,"pop_start_s":0.1,"pop_spread_s":1.2,"pop_s":0.45,"stand_up_s":1.0,"stand_up_spread_s":0.6,"bob":0.1,"bob_hz":2.2,"cycle_s":2.6,"arm_length":0.85,"duck_s":1.6,"line_up_s":3.7,"line_up_duration_s":1.2,"rows":4,"row_gap":0.36,"col_gap":0.3},"minions2":{"_about":"Only used by ?v=minions2: the minions crowd covering the whole visible floor, horizon to the bottom edge. Anything not set here comes from the minions section. ring and hero_clear keep the crowd off the hero (ring in hero heights, hero_clear in screen units), ripple_s is how long the hero's lights and boom take to ripple out to the furthest mini.","count":220,"size":0.2,"pop_spread_s":1.6,"ring":0.55,"hero_clear":0.05,"depth_grow":0.85,"max_depth":60,"reach_cells":60,"ripple_s":0.8,"bob":0.08}};
 const editorMode = new URLSearchParams(location.search).get("editor") === "1";
 function cfgMerge(base, over) {
   if (!over || typeof over !== "object" || Array.isArray(over)) return base;
@@ -704,7 +705,11 @@ const modeParam = pageParams.get("v") || new URL(import.meta.url).searchParams.g
 /** morph2 runs on the morph1 frame (one surface, scan, camera, end scene) with module art and a voxel morph. */
 /** morph3: morph2 with a wider hero framing, a camera glide and a progressive resolve (this file only runs for ?v=morph3). */
 /** minions: morph3 plus a field of little PORTABOOMs that pop up out of the QR and cycle with the hero. */
-const minionsWanted = true; // this file only runs for ?v=minions
+const minionsWanted = true; // this file only runs for ?v=minions and ?v=minions2
+/** minions2: the same crowd, covering the whole visible floor right up to the front (?v=minions2). */
+const minions2Mode = modeParam === "minions2";
+/** minions settings; minions2 takes the minions section with its own minions2 section on top. */
+function minisCfg() { return minions2Mode ? { ...CFG.minions, ...(CFG.minions2 || {}) } : CFG.minions; }
 const morph3Wanted = modeParam === "morph3" || minionsWanted;
 const morph2Wanted = modeParam === "morph2" || morph3Wanted;
 const morph1Wanted = modeParam === "morph1" || morph2Wanted;
@@ -4245,6 +4250,7 @@ function morph1DoorPose(unitH = null) {
     aspect,
     lensY,
     pivot: new THREE.Vector3(bc.x, 0, bc.z),
+    heroBox: body.clone(), // minions2: keeps the crowd off the hero's head and cabinet
   };
 }
 
@@ -5910,7 +5916,7 @@ function morph3BoomDownCamera() {
  * ------------------------------------------------------------------ */
 const MINI_C = { cab: "#EC8A22", band: "#1B2A4A", eye: "#7FF0C8", dark: "#1D1D1F", steel: "#9AA1AA", red: "#C8102E", white: "#F4F4F2", stop: "#E0262B" };
 function minisInit() {
-  const M = CFG.minions;
+  const M = minisCfg();
   const vox = morph2.voxels;
   if (!vox || !vox.length || !boomRig?.pivot) return;
   const foot = new THREE.Vector3(morph1.finalPos?.x ?? 0, 0, morph1.finalPos?.z ?? 0);
@@ -6002,9 +6008,14 @@ function minisInit() {
     }
   }
   spots.sort((a, b) => a.dc - b.dc);
+  // minions2: replace the field with one that covers the whole visible floor, nearest the hero first.
+  if (minions2Mode) { spots.length = 0; minis2Spots(spots, { rnd, cell, n, o, R, foot, H, front, M }); spots.sort((a, b) => a.d - b.d); }
   // The ones nearest the middle of the screen-filling code (portrait: rows count less).
-  const list = spots.slice(0, Math.max(0, Math.min(150, Math.round(M.count))));
+  const list = spots.slice(0, Math.max(0, Math.min(minions2Mode ? 400 : 150, Math.round(M.count))));
   const maxD = Math.max(1e-3, ...list.map((m) => m.d));
+  // minions2: everyone stays where they popped up.
+  if (minions2Mode) list.forEach((m) => { m.lx = m.x; m.lz = m.z; m.ld = m.d; });
+  else {
   // Line-up slots: rows behind the hero, nearest first, with a gap behind the hero itself.
   const rows = Math.max(1, Math.round(M.rows));
   const slots = [];
@@ -6033,6 +6044,7 @@ function minisInit() {
     m.lx = foot.x + s.dx;
     m.lz = foot.z + s.dz * front;
     m.ld = Math.hypot(s.dx, s.dz);
+  }
   }
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, metalness: 0.02, fog: false });
   const body = new THREE.InstancedMesh(bodyGeo, mat, list.length);
@@ -6066,6 +6078,147 @@ function minisInit() {
   morph2.stats.miniInstances = list.length * 6;
   morph2.stats.miniTris = Math.round(tri(bodyGeo) + tri(armGeo) + 3 * tri(lensGeo));
   morph2.stats.miniHeroH = +H.toFixed(3);
+}
+
+/* ------------------------------------------------------------------
+ * minions2 (?v=minions2): the same crowd, but it covers the whole visible
+ * floor, horizon to the bottom edge of the screen, either side of the hero.
+ * Spots are QR module centres picked so the crowd looks evenly packed on
+ * screen (wider world gaps further away), clear of a small ring round the
+ * hero's feet, the strip its boom comes down on, and anything that would
+ * cover the hero's light head, lenses or cabinet face in the end shot.
+ * ------------------------------------------------------------------ */
+/** A camera for one of the end poses (the same maths as morph1ApplyCamera at u = 1). */
+function minis2PoseCam(pose) {
+  const c = new THREE.PerspectiveCamera(pose.fov, pose.aspect, 0.05, 1000);
+  const dist = pose.height / (2 * Math.tan(THREE.MathUtils.degToRad(pose.fov) / 2));
+  c.quaternion.copy(pose.quat);
+  c.position.copy(pose.target).add(new THREE.Vector3(0, 0, 1).applyQuaternion(pose.quat).multiplyScalar(dist));
+  c.updateProjectionMatrix();
+  c.projectionMatrix.elements[8] = -pose.shiftX;
+  c.projectionMatrix.elements[9] = -pose.shiftY;
+  c.projectionMatrixInverse.copy(c.projectionMatrix).invert();
+  c.updateMatrixWorld(true);
+  c.matrixWorldInverse.copy(c.matrixWorld).invert();
+  return c;
+}
+const _mn2p = new THREE.Vector3();
+/** Screen rect (NDC) and nearest depth of a set of world points. */
+function minis2Rect(cam, pts) {
+  const r = { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity, depth: Infinity, behind: false };
+  for (const p of pts) {
+    _mn2p.copy(p).applyMatrix4(cam.matrixWorldInverse);
+    const d = -_mn2p.z;
+    if (d <= 0.02) { r.behind = true; continue; }
+    r.depth = Math.min(r.depth, d);
+    _mn2p.copy(p).project(cam);
+    r.x0 = Math.min(r.x0, _mn2p.x); r.x1 = Math.max(r.x1, _mn2p.x);
+    r.y0 = Math.min(r.y0, _mn2p.y); r.y1 = Math.max(r.y1, _mn2p.y);
+  }
+  return r;
+}
+function minis2BoxPts(b) {
+  const out = [];
+  for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z]) out.push(new THREE.Vector3(x, y, z));
+  return out;
+}
+/** Mini footprint corners at full size (k = mini height share of the hero). */
+function minis2MiniPts(x, z, H, k) {
+  // Boom up it stands 1.3 hero-heights tall; boom down it reaches 0.95 out to its right.
+  const w = 0.16 * H * k, r = 0.95 * H * k, top = 1.3 * H * k;
+  return [[-w, 0, -w], [r, 0, -w], [-w, 0, w], [r, 0, w], [-w, top, -w], [r, top, -w], [-w, top, w], [r, top, w]].map(([a, b, c]) => new THREE.Vector3(x + a, b, z + c));
+}
+function minis2Spots(spots, { rnd, cell, n, o, R, foot, H, front, M }) {
+  const poses = [morph1.doorPose || morph1DoorPose(), morph1.doorPoseDown || morph1DoorPose(CFG.camera.unit_height_boom_down)].filter(Boolean);
+  morph2.stats.minis2Poses = poses.length;
+  if (!poses.length) return;
+  const cams = poses.map(minis2PoseCam);
+  const k = M.size;
+  const pad = M.hero_clear ?? 0.05;
+  const heroes = poses.map((p, i) => {
+    if (!p.heroBox) return null;
+    const r = minis2Rect(cams[i], minis2BoxPts(p.heroBox));
+    return { x0: r.x0 - pad, x1: r.x1 + pad, y0: r.y0 - pad, y1: r.y1 + pad, depth: r.depth };
+  });
+  const ring = (M.ring ?? 0.55) * H;
+  const reach = R + Math.max(0, Math.round(M.reach_cells ?? 60));
+  const cand = [];
+  for (let r = -reach; r < n + reach; r += 1) {
+    for (let c = -reach; c < n + reach; c += 1) {
+      const x = (c - o) * cell, z = (r - o) * cell;
+      const dx = x - foot.x, dz = (z - foot.z) * front;
+      if (Math.hypot(dx, dz) < ring) continue;
+      // The strip right of the hero where its modules lift off and its boom comes down.
+      if (dx > -0.2 * H && dx < 1.7 * H && dz > -0.6 * H && dz < 0.3 * H) continue;
+      const pts = minis2MiniPts(x, z, H, k);
+      let seen = false, blocks = false, depth = Infinity;
+      cams.forEach((cam, i) => {
+        const m = minis2Rect(cam, pts);
+        if (m.behind || !Number.isFinite(m.depth)) return;
+        depth = Math.min(depth, m.depth);
+        // On screen somewhere (a little past the side edges for the camera glide).
+        if (m.x1 > -1.15 && m.x0 < 1.15 && m.y1 > -1.02 && m.y0 < 1) seen = true;
+        const h = heroes[i];
+        if (h && m.depth < h.depth + 0.5 * H && m.x1 > h.x0 && m.x0 < h.x1 && m.y1 > h.y0 && m.y0 < h.y1) blocks = true;
+      });
+      if (!seen || blocks || depth > (M.max_depth ?? 60) * H) continue;
+      cand.push({ x, z, dx, dz, depth, key: depth * (1 + 0.15 * rnd()) });
+    }
+  }
+  morph2.stats.minis2Candidates = cand.length;
+  if (!cand.length) return;
+  cand.sort((a, b) => a.key - b.key);
+  const d0 = cand.reduce((m, p) => Math.min(m, p.depth), Infinity);
+  const grow = M.depth_grow ?? 0.85;
+  const want = Math.max(1, Math.round(M.count));
+  // Poisson-style thinning: gap grows with distance so the crowd looks even on screen.
+  // Search the base gap so the field holds about the asked-for count.
+  const pick = (gap) => {
+    const out = [];
+    const cellSz = gap * Math.pow(Math.max(1, cand[cand.length - 1].depth / d0), grow);
+    const hash = new Map();
+    const keyOf = (ix, iz) => ix * 73856093 ^ iz * 19349663;
+    for (const p of cand) {
+      const g = gap * Math.pow(Math.max(1, p.depth / d0), grow);
+      const ix = Math.floor(p.x / cellSz), iz = Math.floor(p.z / cellSz);
+      let ok = true;
+      for (let a = -1; a <= 1 && ok; a += 1) for (let b = -1; b <= 1 && ok; b += 1) {
+        const l = hash.get(keyOf(ix + a, iz + b));
+        if (l) for (const q of l) if (Math.hypot(q.x - p.x, q.z - p.z) < Math.max(g, q.g)) { ok = false; break; }
+      }
+      if (!ok) continue;
+      p.g = g;
+      out.push(p);
+      const kk = keyOf(ix, iz);
+      if (!hash.has(kk)) hash.set(kk, []);
+      hash.get(kk).push(p);
+    }
+    return out;
+  };
+  let lo = 0.05 * H * k, hi = 8 * H * k, best = pick(hi);
+  for (let it = 0; it < 14; it += 1) {
+    const mid = Math.sqrt(lo * hi);
+    const got = pick(mid);
+    if (got.length >= want) { lo = mid; best = got; } else hi = mid;
+  }
+  for (const p of best) {
+    spots.push({ x: p.x, z: p.z, dx: p.dx, dz: p.dz, d: Math.hypot(p.dx, p.dz), phase: rnd(), jit: rnd(), jit2: rnd(), hz: 0.8 + rnd() * 0.45, yaw: (rnd() - 0.5) * 0.9, cyc: 0.8 + rnd() * 0.45 });
+  }
+}
+/** minions2: the hero's light and boom over time, so each mini can follow it a little later (a ripple). */
+function minis2Hist(mi, T, light, up) {
+  const h = mi.hist || (mi.hist = []);
+  if (h.length && T < h[h.length - 1].T) h.length = 0;
+  h.push({ T, light, up });
+  if (h.length > 600) h.splice(0, h.length - 600);
+}
+function minis2HeroAt(mi, T) {
+  const h = mi.hist;
+  if (!h || !h.length) return null;
+  let lo = 0, hi = h.length - 1;
+  if (T <= h[0].T) return h[0];
+  while (lo < hi) { const m = (lo + hi + 1) >> 1; if (h[m].T <= T) lo = m; else hi = m - 1; }
+  return h[lo];
 }
 
 /** Merge geometries that all carry position, normal, colour and an index into one. */
@@ -6115,7 +6268,7 @@ function miniCycle(u) {
 function minisFrame(T) {
   const mi = morph2.minis;
   if (!mi) return;
-  const M = CFG.minions;
+  const M = minisCfg();
   const H = mi.H;
   const k = M.size;
   const cyc = Math.max(0.6, M.cycle_s);
@@ -6124,11 +6277,12 @@ function minisFrame(T) {
   const lineS = Math.max(0.2, M.line_up_duration_s);
   const heroLight = { red: 0, amber: 1, green: 2 }[signalAspect] ?? 0;
   const heroUp = boomRig ? m1clamp01(boomRig.shownPct / 100) : 1;
+  if (minions2Mode) minis2Hist(mi, T, heroLight, heroUp);
   let n = 0;
   let shown = 0;
   mi.list.forEach((m) => {
     const tp = M.pop_start_s + M.pop_spread_s * (m.d / mi.maxD) + m.jit * 0.12;
-    const inFront = m.dz > 0.15 * H;
+    const inFront = !minions2Mode && m.dz > 0.15 * H;
     // The corridor between the camera and the hero clears first.
     const corridor = m.dz > 0 && Math.abs(m.dx) < 1.0 * H + m.dz * 0.25;
     const tDuck = M.duck_s + (corridor ? -0.35 : 0) + 0.35 * m.jit;
@@ -6156,7 +6310,7 @@ function minisFrame(T) {
     const settled = inFront ? m1smooth((T - tLine - popS) / 0.3) : lineK;
     // Bob while free, calming to a standstill in line.
     const age = T - tp;
-    const bob = M.bob * H * k * Math.max(0, Math.sin((age * M.bob_hz * m.hz + m.phase) * Math.PI * 2)) * (1 - settled) * m1clamp01(age / popS - 0.6);
+    const bob = M.bob * H * k * Math.max(0, Math.sin((age * M.bob_hz * m.hz + m.phase) * Math.PI * 2)) * (1 - (minions2Mode ? 0.65 : 1) * settled) * m1clamp01(age / popS - 0.6);
     const sq = 1 + 0.18 * Math.sin(m1clamp01((T - (inFront && T >= tLine ? tLine : tp)) / popS) * Math.PI);
     const sk = Math.min(1.25, s) * k;
     _ms.set(sk / Math.sqrt(sq), sk * sq, sk / Math.sqrt(sq));
@@ -6182,8 +6336,10 @@ function minisFrame(T) {
     const lt = ((age - 0.35) / (cyc * m.cyc) + m.phase) % 1;
     let [light, up] = age < 0.35 ? [0, 0] : miniCycle(lt < 0 ? lt + 1 : lt);
     if (settled > 0) {
-      up = THREE.MathUtils.lerp(up, heroUp, settled);
-      if (settled > 0.5) light = heroLight;
+      // minions2: each mini follows the hero a little later the further out it stands (a ripple).
+      const hs = minions2Mode ? minis2HeroAt(mi, T - (M.ripple_s ?? 0) * (m.d / mi.maxD)) : null;
+      up = THREE.MathUtils.lerp(up, hs ? hs.up : heroUp, settled);
+      if (settled > 0.5) light = hs ? hs.light : heroLight;
     }
     _mqa.setFromAxisAngle(_mz, (-Math.PI / 2) * (1 - up)).premultiply(_mq);
     _mv.copy(mi.pivotLocal).multiply(_ms).applyQuaternion(_mq).add(_mo);

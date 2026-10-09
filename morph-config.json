@@ -160,5 +160,18 @@
     "rows": 4,
     "row_gap": 0.36,
     "col_gap": 0.3
+  },
+  "minions2": {
+    "_about": "Only used by ?v=minions2: the minions crowd covering the whole visible floor, horizon to the bottom edge. Anything not set here comes from the minions section. ring and hero_clear keep the crowd off the hero (ring in hero heights, hero_clear in screen units), ripple_s is how long the hero's lights and boom take to ripple out to the furthest mini.",
+    "count": 220,
+    "size": 0.2,
+    "pop_spread_s": 1.6,
+    "ring": 0.55,
+    "hero_clear": 0.05,
+    "depth_grow": 0.85,
+    "max_depth": 60,
+    "reach_cells": 60,
+    "ripple_s": 0.8,
+    "bob": 0.08
   }
 }
