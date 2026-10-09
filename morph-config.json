@@ -174,5 +174,33 @@
     "reach_cells": 60,
     "ripple_s": 0.8,
     "bob": 0.08
+  },
+  "domino": {
+    "_about": "Only used by ?v=domino: the QR topples like dominoes from the corners to the middle, the fallen modules along an aisle flip up as little PORTABOOMs in straight rows either side, the camera comes down into the aisle and travels along it while each row raises its booms, then the hero's boom drop ripples down the rows. Times are seconds after the QR fills the screen; sizes are in hero heights.",
+    "delay_s": 1.7,
+    "topple_start_s": 0.05,
+    "topple_spread_s": 1.25,
+    "topple_s": 0.42,
+    "overshoot": 0.14,
+    "size": 0.14,
+    "aisle_width": 0.6,
+    "lines_per_side": 3,
+    "line_gap": 0.13,
+    "row_gap": 0.16,
+    "first_row": 0.45,
+    "max_rows": 40,
+    "flip_s": 0.5,
+    "stand_delay_s": 0.35,
+    "swoop_start_s": 1.25,
+    "swoop_s": 1.5,
+    "dolly_s": 4.6,
+    "dolly_start": 1.55,
+    "camera_height": 0.42,
+    "look_height": 0.5,
+    "salute_lead": 0.25,
+    "salute_s": 0.45,
+    "ripple_s": 0.9,
+    "glide_yaw_deg": 0,
+    "hero_clear": 0.03
   }
 }

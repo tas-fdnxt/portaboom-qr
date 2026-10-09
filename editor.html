@@ -36,7 +36,7 @@ button.go{background:var(--orange)}
     <div id="phone"><div id="frameWrap"><iframe id="preview" title="Live preview"></iframe></div></div>
     <div id="bar">
       <div id="row">
-        <select id="mode" aria-label="Version"><option value="morph3">morph3</option><option value="road">road</option><option value="minions">minions</option><option value="minions2">minions2</option></select>
+        <select id="mode" aria-label="Version"><option value="morph3">morph3</option><option value="road">road</option><option value="minions">minions</option><option value="minions2">minions2</option><option value="domino">domino</option></select>
         <button id="play" class="go" type="button">Pause</button>
         <button id="replay" type="button">Replay</button>
         <span id="time">0.00 s</span>
@@ -82,20 +82,27 @@ function steps() {
   const scan = cfg.scan.duration_s;
   const fill = cfg.fill.duration_s;
   const m0 = scan + fill;
-  const end = Math.max(cfg.resolve.start_s + cfg.resolve.duration_s + 0.2, cfg.morph_end_s);
-  const show = m0 + Math.max(end, cfg.camera.glide_start_s + cfg.camera.glide_s + cfg.camera.glide_hold_s);
+  // domino: the hero's flight, resolve and glide all start domino.delay_s later.
+  const dm = $("mode").value === "domino" && cfg.domino ? cfg.domino : null;
+  const dl = dm ? dm.delay_s : 0;
+  const end = Math.max(cfg.resolve.start_s + cfg.resolve.duration_s + 0.2, cfg.morph_end_s) + dl;
+  const show = m0 + Math.max(end, cfg.camera.glide_start_s + dl + cfg.camera.glide_s + cfg.camera.glide_hold_s);
   const rd = $("mode").value === "road" && cfg.road ? cfg.road : null;
   const g = rd ? rd.green_s : cfg.lights.green_s, a = rd ? rd.amber_s : cfg.lights.amber_s, r = rd ? rd.red_hold_s : cfg.lights.red_hold_s, l = cfg.boom.lower_s;
   const leave = rd ? rd.leave_after_s : cfg.boom.leave_after_s;
   const pre = rd ? l + (rd.boom_down_wait_s ?? 0.6) + l : 0;
   const marks = [
-    ["Scan", 0], ["QR fills", scan], ["Lift", m0 + cfg.lift.start_s], ["Flight", m0 + 0.9], ["Assembly", m0 + 2.2],
-    ["Resolve", m0 + cfg.resolve.start_s], ["Glide", m0 + cfg.camera.glide_start_s], ["Green", show + pre], ["Amber", show + pre + g],
+    ["Scan", 0], ["QR fills", scan], ["Lift", m0 + cfg.lift.start_s + dl], ["Flight", m0 + 0.9 + dl], ["Assembly", m0 + 2.2 + dl],
+    ["Resolve", m0 + cfg.resolve.start_s + dl], ["Glide", m0 + cfg.camera.glide_start_s + dl], ["Green", show + pre], ["Amber", show + pre + g],
     ["Red", show + pre + g + a], ["Boom down", show + pre + g + a + r], ["DEST", show + pre + g + a + r + l + leave],
   ];
   if (rd) marks.splice(6, 0, ["Road builds", m0 + rd.build_start_s]);
   if ($("mode").value === "minions" && cfg.minions) marks.push(["Minis pop", m0 + cfg.minions.pop_start_s], ["Line up", m0 + cfg.minions.line_up_s]);
   if ($("mode").value === "minions2" && cfg.minions) { const mm = { ...cfg.minions, ...(cfg.minions2 || {}) }; marks.push(["Minis pop", m0 + mm.pop_start_s], ["Crowd follows", m0 + mm.line_up_s]); }
+  if (dm) {
+    marks.splice(marks.findIndex((x) => x[0] === "Lift"), 1);
+    marks.push(["Dominoes fall", m0 + dm.topple_start_s], ["Down to the aisle", m0 + dm.swoop_start_s], ["Down the aisle", m0 + dm.swoop_start_s + dm.swoop_s]);
+  }
   if (rd) marks.push(["Boom lowers", show], ["Boom rises", show + l + (rd.boom_down_wait_s ?? 0.6)]);
   return marks.sort((x, y) => x[1] - y[1]);
 }
@@ -186,9 +193,10 @@ $("clear").onclick = () => { localStorage.removeItem(LIVE_KEY); status("Saved br
 /* ---------- controls ---------- */
 const LABELS = {
   dest: "DEST link (opens at the end)", scan: "Scan", fill: "QR fills the screen", lift: "Lift wave", flight: "Flight",
-  assembly: "Assembly", morph_end_s: "morph ends at (s)", resolve: "Blocks to real unit", camera: "Camera", lights: "Light cycle", boom: "Boom", colours: "Colours", minions: "Minions (?v=minions)", minions2: "Minions everywhere (?v=minions2)", road: "Road scene (?v=road)",
+  assembly: "Assembly", morph_end_s: "morph ends at (s)", resolve: "Blocks to real unit", camera: "Camera", lights: "Light cycle", boom: "Boom", colours: "Colours", minions: "Minions (?v=minions)", minions2: "Minions everywhere (?v=minions2)", domino: "Domino guard of honour (?v=domino)", road: "Road scene (?v=road)",
 };
 const RANGES = [
+  [/^lines_per_side$/, 1, 4, 1], [/^(row|line)_gap$/, 0.08, 0.8, 0.005], [/^max_rows$/, 4, 60, 1], [/^dolly_start$/, 1, 3, 0.01], [/^aisle_width$/, 0.3, 1.5, 0.01], [/^(camera|look)_height$/, 0.1, 1.2, 0.01], [/^(first_row|salute_lead)$/, 0, 1.5, 0.01], [/^overshoot$/, 0, 0.4, 0.01],
   [/^count$/, 30, 300, 1], [/^ring$/, 0.2, 1.5, 0.01], [/^hero_clear$/, 0, 0.3, 0.005], [/^depth_grow$/, 0, 1.5, 0.01], [/^max_depth$/, 10, 120, 1], [/^reach_cells$/, 0, 120, 1], [/^rows$/, 1, 6, 1], [/_gap$/, 0.2, 1.2, 0.01], [/^bob$/, 0, 0.4, 0.01], [/_hz$/, 0.5, 5, 0.05], [/arm_length$/, 0.3, 1.4, 0.01],
   [/passes$/, 1, 6, 1], [/^cars$/, 0, 5, 1], [/^workers$/, 0, 3, 1], [/^car_speed$/, 2, 20, 0.5], [/^car_accel$/, 0.5, 6, 0.1], [/^fog_(near|far)$/, 5, 300, 1], [/^build_radius$/, 40, 400, 5], [/count$/, 10, 400, 1], [/voxel_count$/, 300, 1500, 10], [/_deg$/, 0, 60, 0.5], [/pitch_deg$/, 0, 6, 0.1],
   [/fov/, 20, 75, 0.5], [/unit_height/, 0.3, 0.8, 0.005], [/lens_y$/, 0.25, 0.6, 0.005], [/left_margin$/, 0, 0.2, 0.002],
