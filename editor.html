@@ -36,7 +36,7 @@ button.go{background:var(--orange)}
     <div id="phone"><div id="frameWrap"><iframe id="preview" title="Live preview"></iframe></div></div>
     <div id="bar">
       <div id="row">
-        <select id="mode" aria-label="Version"><option value="morph3">morph3</option><option value="road">road</option></select>
+        <select id="mode" aria-label="Version"><option value="morph3">morph3</option><option value="road">road</option><option value="minions">minions</option></select>
         <button id="play" class="go" type="button">Pause</button>
         <button id="replay" type="button">Replay</button>
         <span id="time">0.00 s</span>
@@ -93,6 +93,7 @@ function steps() {
     ["Red", show + g + a], ["Boom down", show + g + a + r], ["DEST", show + g + a + r + l + leave],
   ];
   if (rd) marks.splice(6, 0, ["Road builds", m0 + rd.build_start_s]);
+  if ($("mode").value === "minions" && cfg.minions) marks.push(["Minis pop", m0 + cfg.minions.pop_start_s], ["Line up", m0 + cfg.minions.line_up_s]);
   return marks.sort((x, y) => x[1] - y[1]);
 }
 function drawMarks() {
@@ -177,12 +178,15 @@ $("download").onclick = () => {
 $("apply").onclick = () => { localStorage.setItem(LIVE_KEY, JSON.stringify(cfg)); status("This browser now plays these settings on the normal page. Other people still see the published file."); };
 $("clear").onclick = () => { localStorage.removeItem(LIVE_KEY); status("Saved browser settings cleared."); };
 
+{ const mv = new URLSearchParams(location.search).get("v"); if (mv && [...$("mode").options].some((o) => o.value === mv)) $("mode").value = mv; }
+
 /* ---------- controls ---------- */
 const LABELS = {
   dest: "DEST link (opens at the end)", scan: "Scan", fill: "QR fills the screen", lift: "Lift wave", flight: "Flight",
-  assembly: "Assembly", morph_end_s: "morph ends at (s)", resolve: "Blocks to real unit", camera: "Camera", lights: "Light cycle", boom: "Boom", colours: "Colours", minions: "Minions", road: "Road scene (?v=road)",
+  assembly: "Assembly", morph_end_s: "morph ends at (s)", resolve: "Blocks to real unit", camera: "Camera", lights: "Light cycle", boom: "Boom", colours: "Colours", minions: "Minions (?v=minions)", road: "Road scene (?v=road)",
 };
 const RANGES = [
+  [/^count$/, 30, 80, 1], [/^rows$/, 1, 6, 1], [/_gap$/, 0.2, 1.2, 0.01], [/^bob$/, 0, 0.4, 0.01], [/_hz$/, 0.5, 5, 0.05], [/arm_length$/, 0.3, 1.4, 0.01],
   [/passes$/, 1, 6, 1], [/^cars$/, 0, 5, 1], [/^workers$/, 0, 3, 1], [/^car_speed$/, 2, 20, 0.5], [/^car_accel$/, 0.5, 6, 0.1], [/^fog_(near|far)$/, 5, 300, 1], [/^build_radius$/, 40, 400, 5], [/count$/, 10, 400, 1], [/voxel_count$/, 300, 1500, 10], [/_deg$/, 0, 60, 0.5], [/pitch_deg$/, 0, 6, 0.1],
   [/fov/, 20, 75, 0.5], [/unit_height/, 0.3, 0.8, 0.005], [/lens_y$/, 0.25, 0.6, 0.005], [/left_margin$/, 0, 0.2, 0.002],
   [/tilt_curve$/, 0.3, 2, 0.01], [/height_cells$/, 0, 4, 0.05], [/speed_cells$/, 4, 60, 1], [/spacing_cells$/, 3, 20, 0.5],

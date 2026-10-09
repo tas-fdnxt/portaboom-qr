@@ -139,5 +139,26 @@
       "work_ute": "#F2F3F0",
       "build_glow": "#FFB347"
     }
+  },
+  "minions": {
+    "_about": "Only used by ?v=minions: little PORTABOOMs pop up out of the QR modules, bob, run their own lights and boom out of sync, then line up in rows behind the hero and follow its lights and boom. count 30-80, size is the mini's height as a share of the hero, times in seconds after the QR fills the screen.",
+    "count": 60,
+    "spacing_cells": 10,
+    "size": 0.27,
+    "pop_start_s": 0.1,
+    "pop_spread_s": 1.2,
+    "pop_s": 0.45,
+    "stand_up_s": 1.0,
+    "stand_up_spread_s": 0.6,
+    "bob": 0.1,
+    "bob_hz": 2.2,
+    "cycle_s": 2.6,
+    "arm_length": 0.85,
+    "duck_s": 1.6,
+    "line_up_s": 3.7,
+    "line_up_duration_s": 1.2,
+    "rows": 4,
+    "row_gap": 0.36,
+    "col_gap": 0.3
   }
 }
