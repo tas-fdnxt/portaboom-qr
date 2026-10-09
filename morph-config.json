@@ -202,5 +202,42 @@
     "ripple_s": 0.9,
     "glide_yaw_deg": 0,
     "hero_clear": 0.03
+  },
+  "night": {
+    "_about": "Only used by ?v=night: after the scan the page fades to night, the QR modules switch on like city lights, the modules fly in as glowing cubes, then a wet road spreads in front of the real unit and its lenses and cabinet flashers light it. fade_s: how long the fade to night takes. city_glow, cube_glow: glow strengths. light_min, bright_share, dark_share: the dimmest QR light, the share of bright ones and the share that stay dark. road_start_s, road_s: when the wet road spreads (seconds after the QR fills the screen); road_radius, road_behind: its size in front of and behind the unit. wash, sky_wash: the light cycle's colour wash on the scene and the sky. streaks, streak_length: the reflections on the road. haze_near, haze_far: how far the night haze starts and ends behind the unit. scene_light: how much of the day lighting stays.",
+    "fade_s": 0.9,
+    "city_glow": 0.35,
+    "light_min": 0.02,
+    "bright_share": 0.12,
+    "dark_share": 0.35,
+    "cube_glow": 0.55,
+    "cube_brighten": 0.25,
+    "road_start_s": 3.2,
+    "road_s": 1.6,
+    "road_radius": 9,
+    "road_behind": 1.1,
+    "road_roughness": 0.16,
+    "wash": 3.2,
+    "wash_range": 9,
+    "sky_wash": 0.008,
+    "haze_near": 1.0,
+    "haze_far": 10,
+    "flasher_light": 1.2,
+    "flasher_range": 5,
+    "streaks": 0.9,
+    "streak_length": 0.85,
+    "scene_light": 0.3,
+    "colours": {
+      "paper": "#070A12",
+      "sky_top": "#03050B",
+      "horizon": "#151C36",
+      "ground": "#05070C",
+      "asphalt": "#0B0E13",
+      "city_light": "#FFE6B5",
+      "city_warm": "#FFC46B",
+      "city_cool": "#F4F1FF",
+      "city_glow": "#FFC978",
+      "window_off": "#141A2A"
+    }
   }
 }
