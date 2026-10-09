@@ -23,7 +23,7 @@ import {
  * it live. Order of precedence: built-in defaults < morph-config.json <
  * ?config=<url> < this browser's saved override (localStorage).
  * ------------------------------------------------------------------ */
-const MORPH_DEFAULTS = {"_about":"PORTABOOM morph3 settings. Times are in seconds. Edit with editor.html or by hand, then commit this file. See EDITING.md.","dest":"https://www.trafficaccess.com.au/portaboom-product/portaboom-pb4000-series/","scan":{"auto_start_delay_s":0.8,"duration_s":1.8,"passes":2},"fill":{"duration_s":0.9,"pop_s":0.4},"lift":{"start_s":0.12,"spread_s":0.55,"duration_s":0.75,"height_cells":1.2,"tilt":0.55,"print_fade_s":0.75},"flight":{"boom":{"start_s":0.3,"stagger_dist":0.35,"stagger_height":0.95,"jitter_s":0.04,"duration_s":1.25,"duration_jitter_s":0.1,"arc":0.18,"spin":0.25},"head":{"start_s":0.45,"stagger_dist":0.1,"stagger_height":1.45,"stagger_across":0.2,"jitter_s":0.02,"duration_s":0.85,"duration_jitter_s":0.06,"arc":0.12,"spin":0.15},"body":{"start_s":0.22,"stagger_dist":0.5,"stagger_height":0.85,"jitter_s":0.08,"duration_s":1.35,"duration_jitter_s":0.25,"arc":0.35,"spin":0.8},"recolour_from":0.45,"recolour_over":0.35},"assembly":{"voxel_count":1100,"floor_ripple":true,"ripple_speed_cells":26,"ripple_height_cells":0.35},"resolve":{"style":"shimmer","start_s":3.3,"duration_s":1.3,"shimmer_color":"#FFD27A","shimmer_band":0.2,"flip_deg":90,"sweep_ring":0.85,"lens_flash":1.0,"push_in":0.05},"morph_end_s":4.8,"camera":{"tilt_start_s":0.05,"tilt_end_s":3.55,"tilt_curve":0.72,"fov_portrait":50,"fov_wide":34,"unit_height":0.49,"unit_height_boom_down":0.415,"lens_y":0.44,"left_margin":0.015,"pitch_deg":0,"glide_yaw_deg":18,"glide_start_s":3.6,"glide_s":2.6,"glide_hold_s":0.3},"lights":{"green_s":0.5,"amber_s":1.0,"red_hold_s":0.5},"boom":{"lower_s":1.0,"leave_after_s":0.4},"colours":{"lens_red":"#FF3A2E","lens_amber":"#FFAA1C","lens_green":"#2CCB68","boom_red":"#C8102E","boom_white":"#F4F4F2","floor":"#34466B","sky_top":"#D7E0EA","horizon":"#F1ECE3","ground":"#E3DACB"},"road":{"_about":"Only used by ?v=road: the worksite road scene that builds outward from the unit. cars 0-5, workers 0-3, speeds in m/s.","build_start_s":2.9,"build_s":3.4,"build_radius":280,"cars":4,"car_speed":9,"car_accel":2.4,"workers":3,"fog_near":16,"fog_far":125,"green_s":2.4,"amber_s":1.0,"red_hold_s":0.6,"leave_after_s":1.6,"colours":{"sky_top":"#8FB4DA","horizon":"#E4EAEE","asphalt":"#4A4E55","grass":"#6E8B4E","line":"#F2F1EA","kerb":"#BDB9B0","cone":"#FF5B0A","sign":"#FFB81C","hivis":"#FF6A00","tree_a":"#4F7A3C","tree_b":"#3E6533","tree_c":"#6F8F5E","hills":"#9DB09A","work_ute":"#F2F3F0","build_glow":"#FFB347"}},"minions":{"_about":"Only used by ?v=minions: little PORTABOOMs pop up out of the QR modules, bob, run their own lights and boom out of sync, then line up in rows behind the hero and follow its lights and boom. count 30-80, size is the mini's height as a share of the hero, times in seconds after the QR fills the screen.","count":60,"spacing_cells":10,"size":0.27,"pop_start_s":0.1,"pop_spread_s":1.2,"pop_s":0.45,"stand_up_s":1.0,"stand_up_spread_s":0.6,"bob":0.1,"bob_hz":2.2,"cycle_s":2.6,"arm_length":0.85,"duck_s":1.6,"line_up_s":3.7,"line_up_duration_s":1.2,"rows":4,"row_gap":0.36,"col_gap":0.3},"minions2":{"_about":"Only used by ?v=minions2: the minions crowd covering the whole visible floor, horizon to the bottom edge. Anything not set here comes from the minions section. ring and hero_clear keep the crowd off the hero (ring in hero heights, hero_clear in screen units), ripple_s is how long the hero's lights and boom take to ripple out to the furthest mini.","count":220,"size":0.2,"pop_spread_s":1.6,"ring":0.55,"hero_clear":0.05,"depth_grow":0.85,"max_depth":60,"reach_cells":60,"ripple_s":0.8,"bob":0.08}};
+const MORPH_DEFAULTS = {"_about":"PORTABOOM morph3 settings. Times are in seconds. Edit with editor.html or by hand, then commit this file. See EDITING.md.","dest":"https://www.trafficaccess.com.au/portaboom-product/portaboom-pb4000-series/","scan":{"auto_start_delay_s":0.8,"duration_s":1.8,"passes":2},"fill":{"duration_s":0.9,"pop_s":0.4},"lift":{"start_s":0.12,"spread_s":0.55,"duration_s":0.75,"height_cells":1.2,"tilt":0.55,"print_fade_s":0.75},"flight":{"boom":{"start_s":0.3,"stagger_dist":0.35,"stagger_height":0.95,"jitter_s":0.04,"duration_s":1.25,"duration_jitter_s":0.1,"arc":0.18,"spin":0.25},"head":{"start_s":0.45,"stagger_dist":0.1,"stagger_height":1.45,"stagger_across":0.2,"jitter_s":0.02,"duration_s":0.85,"duration_jitter_s":0.06,"arc":0.12,"spin":0.15},"body":{"start_s":0.22,"stagger_dist":0.5,"stagger_height":0.85,"jitter_s":0.08,"duration_s":1.35,"duration_jitter_s":0.25,"arc":0.35,"spin":0.8},"recolour_from":0.45,"recolour_over":0.35},"assembly":{"voxel_count":1100,"floor_ripple":true,"ripple_speed_cells":26,"ripple_height_cells":0.35},"resolve":{"style":"shimmer","start_s":3.3,"duration_s":1.3,"shimmer_color":"#FFD27A","shimmer_band":0.2,"flip_deg":90,"sweep_ring":0.85,"lens_flash":1.0,"push_in":0.05},"morph_end_s":4.8,"camera":{"tilt_start_s":0.05,"tilt_end_s":3.55,"tilt_curve":0.72,"fov_portrait":50,"fov_wide":34,"unit_height":0.49,"unit_height_boom_down":0.415,"lens_y":0.44,"left_margin":0.015,"pitch_deg":0,"glide_yaw_deg":18,"glide_start_s":3.6,"glide_s":2.6,"glide_hold_s":0.3},"lights":{"green_s":0.5,"amber_s":1.0,"red_hold_s":0.5},"boom":{"lower_s":1.0,"leave_after_s":0.4},"colours":{"lens_red":"#FF3A2E","lens_amber":"#FFAA1C","lens_green":"#2CCB68","boom_red":"#C8102E","boom_white":"#F4F4F2","floor":"#34466B","sky_top":"#D7E0EA","horizon":"#F1ECE3","ground":"#E3DACB"},"road":{"_about":"Only used by ?v=road: the worksite road scene that builds outward from the unit. cars 0-5, workers 0-3, speeds in m/s.","build_start_s":2.9,"build_s":3.4,"build_radius":280,"cars":4,"car_speed":9,"car_accel":2.4,"workers":3,"fog_near":16,"fog_far":125,"green_s":2.4,"amber_s":1.0,"red_hold_s":0.6,"leave_after_s":1.6,"colours":{"sky_top":"#8FB4DA","horizon":"#E4EAEE","asphalt":"#4A4E55","grass":"#6E8B4E","line":"#F2F1EA","kerb":"#BDB9B0","cone":"#FF5B0A","sign":"#FFB81C","hivis":"#FF6A00","tree_a":"#4F7A3C","tree_b":"#3E6533","tree_c":"#6F8F5E","hills":"#9DB09A","work_ute":"#F2F3F0","build_glow":"#FFB347"}},"minions":{"_about":"Only used by ?v=minions: little PORTABOOMs pop up out of the QR modules, bob, run their own lights and boom out of sync, then line up in rows behind the hero and follow its lights and boom. count 30-80, size is the mini's height as a share of the hero, times in seconds after the QR fills the screen.","count":60,"spacing_cells":10,"size":0.27,"pop_start_s":0.1,"pop_spread_s":1.2,"pop_s":0.45,"stand_up_s":1.0,"stand_up_spread_s":0.6,"bob":0.1,"bob_hz":2.2,"cycle_s":2.6,"arm_length":0.85,"duck_s":1.6,"line_up_s":3.7,"line_up_duration_s":1.2,"rows":4,"row_gap":0.36,"col_gap":0.3},"minions2":{"_about":"Only used by ?v=minions2: the minions crowd covering the whole visible floor, horizon to the bottom edge. Anything not set here comes from the minions section. ring and hero_clear keep the crowd off the hero (ring in hero heights, hero_clear in screen units), ripple_s is how long the hero's lights and boom take to ripple out to the furthest mini.","count":220,"size":0.2,"pop_spread_s":1.6,"ring":0.55,"hero_clear":0.08,"depth_grow":0.85,"max_depth":60,"reach_cells":60,"ripple_s":0.8,"bob":0.08}};
 const editorMode = new URLSearchParams(location.search).get("editor") === "1";
 function cfgMerge(base, over) {
   if (!over || typeof over !== "object" || Array.isArray(over)) return base;
@@ -6137,8 +6137,11 @@ function minis2Spots(spots, { rnd, cell, n, o, R, foot, H, front, M }) {
   const pad = M.hero_clear ?? 0.05;
   const heroes = poses.map((p, i) => {
     if (!p.heroBox) return null;
-    const r = minis2Rect(cams[i], minis2BoxPts(p.heroBox));
-    return { x0: r.x0 - pad, x1: r.x1 + pad, y0: r.y0 - pad, y1: r.y1 + pad, depth: r.depth };
+    // The whole unit: cabinet, head, wheels and the outrigger legs either side.
+    const hb = p.heroBox.clone().expandByVector(new THREE.Vector3(0.18 * H, 0, 0.18 * H));
+    hb.min.y = 0;
+    const r = minis2Rect(cams[i], minis2BoxPts(hb));
+    return { x0: r.x0 - pad, x1: r.x1 + pad, y0: r.y0 - 2 * pad, y1: r.y1 + pad, depth: r.depth };
   });
   const ring = (M.ring ?? 0.55) * H;
   const reach = R + Math.max(0, Math.round(M.reach_cells ?? 60));
@@ -6151,7 +6154,7 @@ function minis2Spots(spots, { rnd, cell, n, o, R, foot, H, front, M }) {
       // The strip right of the hero where its modules lift off and its boom comes down.
       if (dx > -0.2 * H && dx < 1.7 * H && dz > -0.6 * H && dz < 0.3 * H) continue;
       const pts = minis2MiniPts(x, z, H, k);
-      let seen = false, blocks = false, depth = Infinity;
+      let seen = false, blocks = false, depth = Infinity, sc = 1;
       cams.forEach((cam, i) => {
         const m = minis2Rect(cam, pts);
         if (m.behind || !Number.isFinite(m.depth)) return;
@@ -6159,10 +6162,14 @@ function minis2Spots(spots, { rnd, cell, n, o, R, foot, H, front, M }) {
         // On screen somewhere (a little past the side edges for the camera glide).
         if (m.x1 > -1.15 && m.x0 < 1.15 && m.y1 > -1.02 && m.y0 < 1) seen = true;
         const h = heroes[i];
-        if (h && m.depth < h.depth + 0.5 * H && m.x1 > h.x0 && m.x0 < h.x1 && m.y1 > h.y0 && m.y0 < h.y1) blocks = true;
+        if (h && m.depth < h.depth + 0.5 * H && m.x1 > h.x0 && m.x0 < h.x1 && m.y1 > h.y0 && m.y0 < h.y1) {
+          // In front of the hero: a smaller mini that stays under the hero's wheels, or none at all.
+          const f = (h.y0 - m.y0) / Math.max(1e-6, m.y1 - m.y0);
+          if (f >= (M.front_min_scale ?? 0.35)) sc = Math.min(sc, f * 0.97); else blocks = true;
+        }
       });
       if (!seen || blocks || depth > (M.max_depth ?? 60) * H) continue;
-      cand.push({ x, z, dx, dz, depth, key: depth * (1 + 0.15 * rnd()) });
+      cand.push({ x, z, dx, dz, depth, sc, key: depth * (1 + 0.15 * rnd()) });
     }
   }
   morph2.stats.minis2Candidates = cand.length;
@@ -6202,7 +6209,7 @@ function minis2Spots(spots, { rnd, cell, n, o, R, foot, H, front, M }) {
     if (got.length >= want) { lo = mid; best = got; } else hi = mid;
   }
   for (const p of best) {
-    spots.push({ x: p.x, z: p.z, dx: p.dx, dz: p.dz, d: Math.hypot(p.dx, p.dz), phase: rnd(), jit: rnd(), jit2: rnd(), hz: 0.8 + rnd() * 0.45, yaw: (rnd() - 0.5) * 0.9, cyc: 0.8 + rnd() * 0.45 });
+    spots.push({ x: p.x, z: p.z, dx: p.dx, dz: p.dz, d: Math.hypot(p.dx, p.dz), sc: p.sc, phase: rnd(), jit: rnd(), jit2: rnd(), hz: 0.8 + rnd() * 0.45, yaw: (rnd() - 0.5) * 0.9, cyc: 0.8 + rnd() * 0.45 });
   }
 }
 /** minions2: the hero's light and boom over time, so each mini can follow it a little later (a ripple). */
@@ -6312,7 +6319,7 @@ function minisFrame(T) {
     const age = T - tp;
     const bob = M.bob * H * k * Math.max(0, Math.sin((age * M.bob_hz * m.hz + m.phase) * Math.PI * 2)) * (1 - (minions2Mode ? 0.65 : 1) * settled) * m1clamp01(age / popS - 0.6);
     const sq = 1 + 0.18 * Math.sin(m1clamp01((T - (inFront && T >= tLine ? tLine : tp)) / popS) * Math.PI);
-    const sk = Math.min(1.25, s) * k;
+    const sk = Math.min(1.25, s) * k * (m.sc ?? 1); // minions2: smaller right in front of the hero
     _ms.set(sk / Math.sqrt(sq), sk * sq, sk / Math.sqrt(sq));
     _mo.set(x, -(1 - m1clamp01(s)) * 0.12 * H * k + bob + hop, z);
     const wob = 0.08 * Math.sin((age * 1.7 + m.phase * 6.28)) * (1 - settled);

@@ -168,7 +168,7 @@
     "size": 0.2,
     "pop_spread_s": 1.6,
     "ring": 0.55,
-    "hero_clear": 0.05,
+    "hero_clear": 0.08,
     "depth_grow": 0.85,
     "max_depth": 60,
     "reach_cells": 60,
