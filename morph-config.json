@@ -239,5 +239,24 @@
       "city_glow": "#FFC978",
       "window_off": "#141A2A"
     }
+  },
+  "drone": {
+    "_about": "Only used by ?v=drone: after the scan the camera pulls up into a top-down drone view, the QR turns into the worksite one module at a time (far modules first, the drawing of the unit last), the PORTABOOM assembles on the road seen from above, then one long swoop with a gentle bank brings the camera down to the road cut's eye-level frame and the road cycle runs (traffic, lights and boom use the road section). Times are seconds after the QR fills the screen.",
+    "delay_s": 1.7,
+    "pull_start_s": 0.05,
+    "pull_s": 1.3,
+    "height": 1.75,
+    "centre_x": 1.3,
+    "centre_z": 2.6,
+    "fov": 34,
+    "transform_start_s": 0.35,
+    "transform_s": 1.9,
+    "tile_flip_s": 0.22,
+    "random": 0.3,
+    "swoop_start_s": 4.2,
+    "swoop_s": 4.6,
+    "swoop_side": -6,
+    "swoop_back": 0.55,
+    "bank_deg": 9
   }
 }
