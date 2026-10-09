@@ -258,5 +258,46 @@
     "swoop_side": -6,
     "swoop_back": 0.55,
     "bank_deg": 9
+  },
+  "blueprint": {
+    "_about": "blueprint look (?v=blueprint). Times are seconds after the scan fill, like resolve.start_s. fill_<part>_s is when each part starts to scan in; fill_part_s is how long each takes. Every number on the sheet is measured from the GLB.",
+    "invert_start_s": 0.15,
+    "invert_s": 0.8,
+    "paper_alpha": 0.86,
+    "label_size": 0.034,
+    "draw_start_s": -0.3,
+    "draw_s": 1.1,
+    "lift_start_s": 0.9,
+    "lift_s": 1.6,
+    "lift_height_cells": 6,
+    "wire_glow": 1.6,
+    "fill_cabinet_s": 2.4,
+    "fill_head_s": 2.9,
+    "fill_lenses_s": 3.3,
+    "fill_boom_s": 3.55,
+    "fill_wheels_s": 4.0,
+    "fill_part_s": 0.55,
+    "scan_glow": 1.0,
+    "flash": 0.12,
+    "wire_fade_start_s": 3.6,
+    "wire_fade_s": 1.0,
+    "wire_fill_fade": 0.8,
+    "ink_fade_start_s": 3.4,
+    "ink_fade_s": 1.2,
+    "colours": {
+      "paper": "#1B4A8C",
+      "grid": "#6E9BD8",
+      "ink": "#F2F7FF",
+      "wire": "#7FE8FF",
+      "module": "#2C64B0",
+      "sky_top": "#0D2752",
+      "horizon": "#3F70B4",
+      "ground": "#18427F"
+    },
+    "base": {
+      "camera": {
+        "tilt_start_s": 0.7
+      }
+    }
   }
 }
