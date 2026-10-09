@@ -108,7 +108,7 @@
     "ground": "#E3DACB"
   },
   "road": {
-    "_about": "Only used by ?v=road: the worksite road scene that builds outward from the unit. cars 0-5, workers 0-3, speeds in m/s.",
+    "_about": "Only used by ?v=road: the worksite road scene that builds outward from the unit. Traffic queues on the camera side of the boom; the boom lowers, waits boom_down_wait_s, rises (boom.lower_s each way), then green, amber, red, boom down. cars 0-5, workers 0-3, speeds in m/s.",
     "build_start_s": 2.9,
     "build_s": 3.4,
     "build_radius": 280,
@@ -122,6 +122,7 @@
     "amber_s": 1.0,
     "red_hold_s": 0.6,
     "leave_after_s": 1.6,
+    "boom_down_wait_s": 0.6,
     "colours": {
       "sky_top": "#8FB4DA",
       "horizon": "#E4EAEE",

@@ -3,16 +3,22 @@
  * Everything here is built in code: no models, no image files, no third-party assets.
  * Units are metres; the PB4000 stands on the left shoulder near the origin with its
  * lenses facing +z (the camera). The boom, when down, spans the open lane (x 0.8 to 4).
- * Traffic in the open lane drives toward the camera (+z) and queues at the boom;
- * the far lane is coned off as the work zone.
+ * Controlled traffic comes from behind the camera and drives away from it (-z),
+ * facing the lenses and the STOP side of the boom: it queues at the stop line on the
+ * near side of the boom, goes through on green, past the unit into the work zone and
+ * off to the horizon. The far lane is coned off as the work zone (no oncoming traffic).
  *
  * buildRoadScene(THREE, opts) returns { group, setReveal(r), update(dt, sig), snapshot() }.
  * setReveal(r): the world is drawn only inside radius r (metres) round the unit, with a
  * glowing build front, so the road can grow outward from the unit.
  */
 
-const STOP_Z = -1.25; // painted stop line (front bumpers stop just behind it)
-const LANE_X = 2.4; // centre of the open lane
+const BOOM_Z = 0.2; // the lowered boom crosses the open lane here
+const STOP_Z = 1.35; // painted stop line on the approach side of the boom
+const STOP_FRONT_Z = STOP_Z + 0.3; // front bumpers stop here, just short of the line
+const LANE_X = 2.4; // centre of the open lane (painted lines)
+const CAR_X = 1.75; // queue line: left of the lane centre so the waiting car shows beside the unit
+const CAR_EASE_X = 0.5; // pulling away, cars ease right to pass the unit with room
 const ROAD_X0 = -1.0; // sealed surface, left edge (left shoulder)
 const ROAD_X1 = 8.4; // sealed surface, right edge
 const Z_NEAR = 30; // road runs from behind the camera ...
@@ -218,7 +224,7 @@ export function buildRoadScene(THREE, opts) {
   strip(0.74, Z_NEAR, Z_FAR, 0.11); // left edge line
   strip(7.46, Z_NEAR, Z_FAR, 0.11); // right edge line
   for (let z = Z_NEAR; z > Z_FAR; z -= 9) strip(4.05, z, z - 3, 0.11); // dashed centre line
-  lineGeos.push(paint(new THREE.PlaneGeometry(3.2, 0.32).rotateX(-Math.PI / 2).translate(2.4, 0.024, STOP_Z - 0.1), "#ffffff")); // stop line
+  lineGeos.push(paint(new THREE.PlaneGeometry(3.2, 0.32).rotateX(-Math.PI / 2).translate(2.4, 0.024, STOP_Z), "#ffffff")); // stop line
   const lines = new THREE.Mesh(merge(THREE, lineGeos), M.line);
   lines.name = "RoadLines";
   group.add(grass, road, kerbs, lines);
@@ -306,8 +312,9 @@ export function buildRoadScene(THREE, opts) {
     paint(new THREE.CylinderGeometry(0.085, 0.108, 0.13, 12).translate(0, 0.43, 0), "#F4F4F0"),
   ]);
   const conePts = [];
-  for (let z = 1.5; z > -26; z -= 3) conePts.push([4.3, z]);
-  for (let k = 1; k <= 8; k += 1) conePts.push([4.3 + (2.9 * k) / 8, -26 - 2.2 * k]);
+  for (let k = 0; k < 7; k += 1) conePts.push([7.2 - (2.9 * k) / 7, 22 - 2.6 * k]);
+  for (let z = 3.8; z > -42; z -= 3) conePts.push([4.3, z]);
+  for (let k = 1; k <= 5; k += 1) conePts.push([4.3 + (2.9 * k) / 5, -42 - 2.4 * k]);
   conePts.push([3.95, 0.8]);
   const cones = new THREE.InstancedMesh(coneGeo, M.hivis, conePts.length);
   cones.name = "RoadCones";
@@ -346,8 +353,8 @@ export function buildRoadScene(THREE, opts) {
     group.add(g);
     return g;
   }
-  aFrame(-0.35, -16, 0.12, ["PREPARE", "TO STOP"]);
-  aFrame(9.1, -40, -0.1, ["ROADWORK", "AHEAD"]);
+  aFrame(-0.35, -16, 0.12, ["WORKERS", "AHEAD"]);
+  aFrame(9.1, -40, -0.1, ["END", "ROADWORK"]);
 
   /* ---------- cars (extruded side profiles, vertex coloured) ---------- */
   const TYPES = {
@@ -419,23 +426,30 @@ export function buildRoadScene(THREE, opts) {
     if (work) {
       beacon = paint(new THREE.CylinderGeometry(0.09, 0.1, 0.13, 10).translate(0, 1.93, 0.35), "#FFA21A");
     }
-    return { paint: merge(THREE, paintParts), glass: profile(T.glass, W - 0.12, "#ffffff"), lamp: merge(THREE, lampParts), beacon, len, W };
+    // Where this car's front bumper stops so its glass and roof stay under the camera's view
+    // of the lowered boom and its STOP disc (camera eye 2.18 m, boom 1.09 m, 7.6 m apart).
+    let stopZ = STOP_FRONT_Z;
+    for (const [x, y] of T.glass.concat(T.roof)) stopZ = Math.max(stopZ, BOOM_Z + (y + 0.1 - 1.09) * (7.6 / 1.09) - (len / 2 - x));
+    return { paint: merge(THREE, paintParts), glass: profile(T.glass, W - 0.12, "#ffffff"), lamp: merge(THREE, lampParts), beacon, len, W, stopZ };
   }
   const carCount = Math.max(0, Math.min(5, Math.round(cfg.cars ?? 4)));
   const kinds = ["sedan", "suv", "ute", "sedan", "suv"];
   const paints = cfg.car_colours || ["#C9CED6", "#1F3D6E", "#F4F5F2", "#8C1D24", "#2C3036"];
   const cars = [];
-  let zFront = STOP_Z - 0.35;
+  // c.z is the front bumper; cars face and drive toward -z (away from the camera).
+  let zFront = STOP_FRONT_Z;
   for (let i = 0; i < carCount; i += 1) {
     const g = carGeometry(kinds[i % kinds.length], paints[i % paints.length]);
     const obj = new THREE.Group();
     obj.add(new THREE.Mesh(g.paint, M.paint), new THREE.Mesh(g.glass, M.glass), new THREE.Mesh(g.lamp, M.lamp));
+    obj.rotation.y = Math.PI;
     obj.name = `RoadCar${i}`;
-    const car = { obj, len: g.len, W: g.W, z: zFront, v: 0, committed: false, blob: addBlob(LANE_X, zFront - g.len / 2, g.W * 1.25, g.len * 1.1), x: LANE_X + (R() - 0.5) * 0.25 };
-    obj.position.set(car.x, 0.016, car.z - car.len / 2);
+    const x = CAR_X + (R() - 0.5) * 0.16;
+    const car = { obj, len: g.len, W: g.W, stopZ: g.stopZ, z: Math.max(zFront, g.stopZ), v: 0, committed: false, blob: addBlob(x, zFront + g.len / 2, g.W * 1.25, g.len * 1.1), x };
+    obj.position.set(car.x, 0.016, car.z + car.len / 2);
     cars.push(car);
     group.add(obj);
-    zFront -= g.len + 1.7 + R() * 0.6;
+    zFront = car.z + g.len + 1.9 + R() * 0.6;
   }
   // Parked work ute in the closed lane, beacon turning.
   const wu = carGeometry("ute", C.work_ute || "#F2F3F0", true);
@@ -542,39 +556,41 @@ export function buildRoadScene(THREE, opts) {
       for (const c of cars) c.committed = false;
     }
     lastAspect = aspect;
-    const go = aspect === "green" && clock - greenAt > 0.35;
-    // Order cars front to back (largest z first).
-    const order = cars.slice().sort((a, b) => b.z - a.z);
+    const go = aspect === "green" && clock - greenAt > 0.35 && (sig.boomPct ?? 100) > 92;
+    // Order cars front to back (smallest z first: furthest along).
+    const order = cars.slice().sort((a, b) => a.z - b.z);
     for (let k = 0; k < order.length; k += 1) {
       const c = order[k];
       const ahead = k > 0 ? order[k - 1] : null;
       let acc = A * (1 - Math.pow(c.v / V0, 4));
-      if (ahead) acc = Math.min(acc, idm(c.v, ahead.z - ahead.len - c.z, c.v - ahead.v, S0));
-      const toLine = STOP_Z - 0.35 - c.z;
+      if (ahead) acc = Math.min(acc, idm(c.v, c.z - (ahead.z + ahead.len), c.v - ahead.v, S0));
+      const toLine = c.z - c.stopZ; // distance left to this car's stopping point
       if (!go && !c.committed && toLine > -0.2) {
         // Amber or red: stop at the line unless too close to stop comfortably.
         const need = (c.v * c.v) / (2 * 4.5);
-        if (aspect !== "green" && c.v > 1.5 && need > toLine - 0.2) c.committed = true;
+        if (aspect !== "red" && c.v > 1.5 && need > toLine - 0.2) c.committed = true;
         else acc = Math.min(acc, idm(c.v, Math.max(0.02, toLine), c.v, 0.05));
       }
-      if (aspect === "green" && !go && toLine > -0.2 && c.v < 0.2) acc = Math.min(acc, 0);
       c.v = Math.max(0, c.v + acc * dt);
-      if (toLine > 0 && !go && !c.committed) c.v = Math.min(c.v, Math.max(0, toLine) * 4 + 0.0);
-      c.z += c.v * dt;
-      if (c.z > 18) {
-        // Gone past the camera: rejoin far down the road and roll up to the queue.
+      if (toLine > 0 && !go && !c.committed) c.v = Math.min(c.v, Math.max(0, toLine) * 4);
+      c.z -= c.v * dt;
+      if (c.z < -160) {
+        // Gone into the haze: rejoin behind the camera and roll up to the queue.
         const last = order[order.length - 1];
-        c.z = Math.min(last.z - last.len - 32, -70);
-        c.v = V0 * 0.9;
+        c.z = Math.max(last.z + last.len + 26, 40);
+        c.v = V0 * 0.8;
         c.committed = false;
         order.push(order.splice(k, 1)[0]);
         k -= 1;
       }
     }
     for (const c of cars) {
-      c.obj.position.set(c.x, 0.016, c.z - c.len / 2);
-      c.obj.position.y = 0.016 + Math.sin(clock * 9 + c.x) * 0.004 * Math.min(1, c.v / 4);
-      setBlob(c.blob, c.x, c.z - c.len / 2, c.W * 1.25, c.len * 1.1);
+      const u = Math.min(1, Math.max(0, (STOP_FRONT_Z - c.z) / 3.5));
+      const x = c.x + CAR_EASE_X * u * u * (3 - 2 * u);
+      const slope = u > 0 && u < 1 ? (CAR_EASE_X * 6 * u * (1 - u)) / 3.5 : 0;
+      c.obj.position.set(x, 0.016 + Math.sin(clock * 9 + c.x) * 0.004 * Math.min(1, c.v / 4), c.z + c.len / 2);
+      c.obj.rotation.y = Math.PI - Math.atan(slope);
+      setBlob(c.blob, x, c.z + c.len / 2, c.W * 1.25, c.len * 1.1);
     }
     blobs.instanceMatrix.needsUpdate = true;
     // Traffic controllers: bat shows SLOW on green, STOP otherwise; the near one waves traffic through.
@@ -601,6 +617,7 @@ export function buildRoadScene(THREE, opts) {
       cars: cars.map((c) => ({ z: +c.z.toFixed(2), v: +c.v.toFixed(2), committed: c.committed })),
       workers: workers.length,
       stopZ: STOP_Z,
+      boomZ: BOOM_Z,
     };
   }
   return { group, setReveal, update, snapshot, cars, workers, materials: M };

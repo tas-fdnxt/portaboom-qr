@@ -7,7 +7,7 @@ import { buildLivingQr } from "./living-qr.js?b=b034e56e";
 import { encodeTipMatrix, unpackMask, MORPH_PALETTE } from "./qr-url.js?b=b034e56e";
 import { MORPH_MASK } from "./morph-mask.js?b=b034e56e";
 import { encodeMorph2, ART } from "./morph2-art.js?b=b034e56e";
-import { buildRoadScene } from "./road-scene.js?b=8ed761de";
+import { buildRoadScene } from "./road-scene.js?b=da363f00";
 import {
   SHOWTIME_DEST_DEFAULT,
   parseHttpUrl,
@@ -23,7 +23,7 @@ import {
  * it live. Order of precedence: built-in defaults < morph-config.json <
  * ?config=<url> < this browser's saved override (localStorage).
  * ------------------------------------------------------------------ */
-const MORPH_DEFAULTS = {"_about":"PORTABOOM morph3 settings. Times are in seconds. Edit with editor.html or by hand, then commit this file. See EDITING.md.","dest":"https://www.trafficaccess.com.au/portaboom-product/portaboom-pb4000-series/","scan":{"auto_start_delay_s":0.8,"duration_s":1.8,"passes":2},"fill":{"duration_s":0.9,"pop_s":0.4},"lift":{"start_s":0.12,"spread_s":0.55,"duration_s":0.75,"height_cells":1.2,"tilt":0.55,"print_fade_s":0.75},"flight":{"boom":{"start_s":0.3,"stagger_dist":0.35,"stagger_height":0.95,"jitter_s":0.04,"duration_s":1.25,"duration_jitter_s":0.1,"arc":0.18,"spin":0.25},"head":{"start_s":0.45,"stagger_dist":0.1,"stagger_height":1.45,"stagger_across":0.2,"jitter_s":0.02,"duration_s":0.85,"duration_jitter_s":0.06,"arc":0.12,"spin":0.15},"body":{"start_s":0.22,"stagger_dist":0.5,"stagger_height":0.85,"jitter_s":0.08,"duration_s":1.35,"duration_jitter_s":0.25,"arc":0.35,"spin":0.8},"recolour_from":0.45,"recolour_over":0.35},"assembly":{"voxel_count":1100,"floor_ripple":true,"ripple_speed_cells":26,"ripple_height_cells":0.35},"resolve":{"style":"shimmer","start_s":3.3,"duration_s":1.3,"shimmer_color":"#FFD27A","shimmer_band":0.2,"flip_deg":90,"sweep_ring":0.85,"lens_flash":1.0,"push_in":0.05},"morph_end_s":4.8,"camera":{"tilt_start_s":0.05,"tilt_end_s":3.55,"tilt_curve":0.72,"fov_portrait":50,"fov_wide":34,"unit_height":0.49,"unit_height_boom_down":0.415,"lens_y":0.44,"left_margin":0.015,"pitch_deg":0,"glide_yaw_deg":18,"glide_start_s":3.6,"glide_s":2.6,"glide_hold_s":0.3},"lights":{"green_s":0.5,"amber_s":1.0,"red_hold_s":0.5},"boom":{"lower_s":1.0,"leave_after_s":0.4},"colours":{"lens_red":"#FF3A2E","lens_amber":"#FFAA1C","lens_green":"#2CCB68","boom_red":"#C8102E","boom_white":"#F4F4F2","floor":"#34466B","sky_top":"#D7E0EA","horizon":"#F1ECE3","ground":"#E3DACB"},"road":{"_about":"Only used by ?v=road: the worksite road scene that builds outward from the unit. cars 0-5, workers 0-3, speeds in m/s.","build_start_s":2.9,"build_s":3.4,"build_radius":280,"cars":4,"car_speed":9,"car_accel":2.4,"workers":3,"fog_near":16,"fog_far":125,"green_s":2.4,"amber_s":1.0,"red_hold_s":0.6,"leave_after_s":1.6,"colours":{"sky_top":"#8FB4DA","horizon":"#E4EAEE","asphalt":"#4A4E55","grass":"#6E8B4E","line":"#F2F1EA","kerb":"#BDB9B0","cone":"#FF5B0A","sign":"#FFB81C","hivis":"#FF6A00","tree_a":"#4F7A3C","tree_b":"#3E6533","tree_c":"#6F8F5E","hills":"#9DB09A","work_ute":"#F2F3F0","build_glow":"#FFB347"}}};
+const MORPH_DEFAULTS = {"_about":"PORTABOOM morph3 settings. Times are in seconds. Edit with editor.html or by hand, then commit this file. See EDITING.md.","dest":"https://www.trafficaccess.com.au/portaboom-product/portaboom-pb4000-series/","scan":{"auto_start_delay_s":0.8,"duration_s":1.8,"passes":2},"fill":{"duration_s":0.9,"pop_s":0.4},"lift":{"start_s":0.12,"spread_s":0.55,"duration_s":0.75,"height_cells":1.2,"tilt":0.55,"print_fade_s":0.75},"flight":{"boom":{"start_s":0.3,"stagger_dist":0.35,"stagger_height":0.95,"jitter_s":0.04,"duration_s":1.25,"duration_jitter_s":0.1,"arc":0.18,"spin":0.25},"head":{"start_s":0.45,"stagger_dist":0.1,"stagger_height":1.45,"stagger_across":0.2,"jitter_s":0.02,"duration_s":0.85,"duration_jitter_s":0.06,"arc":0.12,"spin":0.15},"body":{"start_s":0.22,"stagger_dist":0.5,"stagger_height":0.85,"jitter_s":0.08,"duration_s":1.35,"duration_jitter_s":0.25,"arc":0.35,"spin":0.8},"recolour_from":0.45,"recolour_over":0.35},"assembly":{"voxel_count":1100,"floor_ripple":true,"ripple_speed_cells":26,"ripple_height_cells":0.35},"resolve":{"style":"shimmer","start_s":3.3,"duration_s":1.3,"shimmer_color":"#FFD27A","shimmer_band":0.2,"flip_deg":90,"sweep_ring":0.85,"lens_flash":1.0,"push_in":0.05},"morph_end_s":4.8,"camera":{"tilt_start_s":0.05,"tilt_end_s":3.55,"tilt_curve":0.72,"fov_portrait":50,"fov_wide":34,"unit_height":0.49,"unit_height_boom_down":0.415,"lens_y":0.44,"left_margin":0.015,"pitch_deg":0,"glide_yaw_deg":18,"glide_start_s":3.6,"glide_s":2.6,"glide_hold_s":0.3},"lights":{"green_s":0.5,"amber_s":1.0,"red_hold_s":0.5},"boom":{"lower_s":1.0,"leave_after_s":0.4},"colours":{"lens_red":"#FF3A2E","lens_amber":"#FFAA1C","lens_green":"#2CCB68","boom_red":"#C8102E","boom_white":"#F4F4F2","floor":"#34466B","sky_top":"#D7E0EA","horizon":"#F1ECE3","ground":"#E3DACB"},"road":{"_about":"Only used by ?v=road: the worksite road scene that builds outward from the unit. Traffic queues on the camera side of the boom; the boom lowers, waits boom_down_wait_s, rises (boom.lower_s each way), then green, amber, red, boom down. cars 0-5, workers 0-3, speeds in m/s.","build_start_s":2.9,"build_s":3.4,"build_radius":280,"cars":4,"car_speed":9,"car_accel":2.4,"workers":3,"fog_near":16,"fog_far":125,"green_s":2.4,"amber_s":1.0,"red_hold_s":0.6,"leave_after_s":1.6,"boom_down_wait_s":0.6,"colours":{"sky_top":"#8FB4DA","horizon":"#E4EAEE","asphalt":"#4A4E55","grass":"#6E8B4E","line":"#F2F1EA","kerb":"#BDB9B0","cone":"#FF5B0A","sign":"#FFB81C","hivis":"#FF6A00","tree_a":"#4F7A3C","tree_b":"#3E6533","tree_c":"#6F8F5E","hills":"#9DB09A","work_ute":"#F2F3F0","build_glow":"#FFB347"}},"minions":{"_about":"Only used by ?v=minions: little PORTABOOMs pop up out of the QR modules, bob, run their own lights and boom out of sync, then line up in rows behind the hero and follow its lights and boom. count 30-80, size is the mini's height as a share of the hero, times in seconds after the QR fills the screen.","count":60,"spacing_cells":10,"size":0.27,"pop_start_s":0.1,"pop_spread_s":1.2,"pop_s":0.45,"stand_up_s":1.0,"stand_up_spread_s":0.6,"bob":0.1,"bob_hz":2.2,"cycle_s":2.6,"arm_length":0.85,"duck_s":1.6,"line_up_s":3.7,"line_up_duration_s":1.2,"rows":4,"row_gap":0.36,"col_gap":0.3},"minions2":{"_about":"Only used by ?v=minions2: the minions crowd covering the whole visible floor, horizon to the bottom edge. Anything not set here comes from the minions section. ring and hero_clear keep the crowd off the hero (ring in hero heights, hero_clear in screen units), ripple_s is how long the hero's lights and boom take to ripple out to the furthest mini.","count":220,"size":0.2,"pop_spread_s":1.6,"ring":0.55,"hero_clear":0.05,"depth_grow":0.85,"max_depth":60,"reach_cells":60,"ripple_s":0.8,"bob":0.08}};
 const editorMode = new URLSearchParams(location.search).get("editor") === "1";
 function cfgMerge(base, over) {
   if (!over || typeof over !== "object" || Array.isArray(over)) return base;
@@ -2145,9 +2145,9 @@ function startShowtime() {
   applyBoomShown(100);
   showtimeStartedAt = performance.now();
   showtimeElapsed = 0;
-  showMode = "green";
+  showMode = roadWanted ? "prelower" : "green";
   showClock = 0;
-  setSignalAspect("green");
+  setSignalAspect(roadWanted ? "red" : "green");
   document.body.classList.add("showtime");
   if (controls) controls.enabled = false;
   setStatus("Showtime");
@@ -3397,7 +3397,8 @@ function tickShow(dt) {
   showClock += dt;
   if (showtimePhase === "playing") {
     showtimeElapsed = (performance.now() - showtimeStartedAt) / 1000;
-    const t = showtimeElapsed;
+    if (roadWanted && roadPreShow(showtimeElapsed)) return;
+    const t = showtimeElapsed - (roadWanted ? ROAD_PRE_S : 0);
     const greenEnd = SHOWTIME_GREEN_S;
     const amberEnd = greenEnd + SHOWTIME_AMBER_S;
     const redEnd = amberEnd + SHOWTIME_RED_HOLD_S;
@@ -4675,7 +4676,7 @@ function morph1FinishRise() {
   morph1UnitPose(1, 1);
   morph1Contact(1);
   morph1ArmAt(MORPH1_ARM_S[1]);
-  setSignalAspect("green");
+  setSignalAspect(roadWanted ? "red" : "green");
   morph1SetClip(boom, false);
 }
 
@@ -5045,6 +5046,27 @@ const road = { scene: null, started: false, done: false, fog: 0, R: 0, last: 0, 
 const ROAD_BUILD_START_S = ROAD_CFG.build_start_s ?? 3.0;
 const ROAD_BUILD_S = Math.max(0.3, ROAD_CFG.build_s ?? 2.8);
 const ROAD_RADIUS = ROAD_CFG.build_radius ?? 280;
+// Boom beat before the light cycle: lowers (red), waits, rises; then green.
+const ROAD_PRE_LOWER_S = Math.max(0.2, ROAD_CFG.boom_lower_s ?? CFG.boom.lower_s);
+const ROAD_PRE_WAIT_S = Math.max(0, ROAD_CFG.boom_down_wait_s ?? 0.6);
+const ROAD_PRE_RAISE_S = Math.max(0.2, ROAD_CFG.boom_raise_s ?? CFG.boom.lower_s);
+const ROAD_PRE_S = ROAD_PRE_LOWER_S + ROAD_PRE_WAIT_S + ROAD_PRE_RAISE_S;
+function roadPreShow(t) {
+  if (t >= ROAD_PRE_S) return false;
+  setSignalAspect("red");
+  const sm = (u) => u * u * (3 - 2 * u);
+  if (t < ROAD_PRE_LOWER_S) {
+    showMode = "prelower";
+    applyBoomShown(100 * (1 - sm(t / ROAD_PRE_LOWER_S)));
+  } else if (t < ROAD_PRE_LOWER_S + ROAD_PRE_WAIT_S) {
+    showMode = "prewait";
+    applyBoomShown(0);
+  } else {
+    showMode = "preraise";
+    applyBoomShown(100 * sm((t - ROAD_PRE_LOWER_S - ROAD_PRE_WAIT_S) / ROAD_PRE_RAISE_S));
+  }
+  return true;
+}
 const _rdM = new THREE.Matrix4();
 const _rdP = new THREE.Vector3();
 const _rdS = new THREE.Vector3();
@@ -5143,6 +5165,7 @@ function roadTick() {
     if (u >= 1) road.done = true;
   }
   if (morph1.phase === "hold" || morph1.phase === "show") morph1EnvFollow(morph1.lastEm ?? 1, morph1Cam.position.distanceTo(morph1.doorPose?.target || morph1Cam.position));
+  if (morph1.phase === "hold" && signalAspect !== "red") setSignalAspect("red");
   road.scene.update(dt, { aspect: signalAspect, boomPct: boomRig?.shownPct ?? 100, showMode });
 }
 

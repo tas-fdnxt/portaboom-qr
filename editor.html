@@ -87,14 +87,16 @@ function steps() {
   const rd = $("mode").value === "road" && cfg.road ? cfg.road : null;
   const g = rd ? rd.green_s : cfg.lights.green_s, a = rd ? rd.amber_s : cfg.lights.amber_s, r = rd ? rd.red_hold_s : cfg.lights.red_hold_s, l = cfg.boom.lower_s;
   const leave = rd ? rd.leave_after_s : cfg.boom.leave_after_s;
+  const pre = rd ? l + (rd.boom_down_wait_s ?? 0.6) + l : 0;
   const marks = [
     ["Scan", 0], ["QR fills", scan], ["Lift", m0 + cfg.lift.start_s], ["Flight", m0 + 0.9], ["Assembly", m0 + 2.2],
-    ["Resolve", m0 + cfg.resolve.start_s], ["Glide", m0 + cfg.camera.glide_start_s], ["Green", show], ["Amber", show + g],
-    ["Red", show + g + a], ["Boom down", show + g + a + r], ["DEST", show + g + a + r + l + leave],
+    ["Resolve", m0 + cfg.resolve.start_s], ["Glide", m0 + cfg.camera.glide_start_s], ["Green", show + pre], ["Amber", show + pre + g],
+    ["Red", show + pre + g + a], ["Boom down", show + pre + g + a + r], ["DEST", show + pre + g + a + r + l + leave],
   ];
   if (rd) marks.splice(6, 0, ["Road builds", m0 + rd.build_start_s]);
   if ($("mode").value === "minions" && cfg.minions) marks.push(["Minis pop", m0 + cfg.minions.pop_start_s], ["Line up", m0 + cfg.minions.line_up_s]);
   if ($("mode").value === "minions2" && cfg.minions) { const mm = { ...cfg.minions, ...(cfg.minions2 || {}) }; marks.push(["Minis pop", m0 + mm.pop_start_s], ["Crowd follows", m0 + mm.line_up_s]); }
+  if (rd) marks.push(["Boom lowers", show], ["Boom rises", show + l + (rd.boom_down_wait_s ?? 0.6)]);
   return marks.sort((x, y) => x[1] - y[1]);
 }
 function drawMarks() {
