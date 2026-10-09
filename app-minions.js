@@ -703,7 +703,7 @@ const motion2Wanted = pageParams.get("v") === "motion2";
 const modeParam = pageParams.get("v") || new URL(import.meta.url).searchParams.get("v") || "";
 /** morph2 runs on the morph1 frame (one surface, scan, camera, end scene) with module art and a voxel morph. */
 /** morph3: morph2 with a wider hero framing, a camera glide and a progressive resolve (this file only runs for ?v=morph3). */
-/** minions: morph3 plus a field of little PORTABOOMs that pop up out of the QR and cycle with the hero (this file only runs for ?v=minions). */
+/** minions: morph3 plus a field of little PORTABOOMs that pop up out of the QR and cycle with the hero. */
 const minionsWanted = true; // this file only runs for ?v=minions
 const morph3Wanted = modeParam === "morph3" || minionsWanted;
 const morph2Wanted = modeParam === "morph2" || morph3Wanted;
@@ -5970,29 +5970,39 @@ function minisInit() {
   const lensLocal = [0.89, 0.77, 0.65].map((y) => new THREE.Vector3(-0.09 * H, y * H, 0.03 * H));
   const pivotLocal = new THREE.Vector3(0.05 * H, 0.404 * H, 0.02 * H);
 
-  // Field spots: QR module centres on a jittered grid over the code, clear of where the hero stands,
-  // where its modules fly in and where its boom comes down.
+  // Field spots: dark QR modules on a jittered grid over the whole screen-filling code, never on
+  // or right next to the drawing of the big unit (its modules fly up from there) or where it stands.
   const rnd = m2rng(5150);
   const cell = living.cell;
   const n = morph2Qr.size;
   const o = (n - 1) / 2;
-  const R = morph2.fillR || 30;
-  const sp = Math.max(3, Math.round(M.spacing_cells));
+  const R = Math.max(40, morph2.fillR || 40);
+  const sp = Math.max(4, Math.round(M.spacing_cells));
+  const roles = morph2Qr.roles || [];
+  // A lying mini covers about a dozen modules towards the top of the code and its boom about ten to the right.
+  const nearArt = (r, c) => {
+    for (let i = -13 * front; Math.abs(i) <= 13 && (front > 0 ? i <= 2 : i >= -2); i += front) {
+      for (let j = -3; j <= 12; j += 1) if (roles[r + i]?.[c + j]) return true;
+    }
+    return false;
+  };
+  const dark = (r, c) => (r >= 0 && c >= 0 && r < n && c < n ? morph1Qr.matrix[r][c] === 1 : true);
+  const cx = (foot.x / cell) + o, cz = (foot.z / cell) + o;
   const spots = [];
   for (let r = -R; r < n + R; r += sp) {
     for (let c = -R; c < n + R; c += sp) {
-      const cc = c + Math.round((rnd() - 0.5) * sp * 0.7), rr = r + Math.round((rnd() - 0.5) * sp * 0.7);
+      let cc = c + Math.round((rnd() - 0.5) * sp * 0.6), rr = r + Math.round((rnd() - 0.5) * sp * 0.6);
+      // Snap onto a dark module close by.
+      for (let t = 0; t < 6 && !dark(rr, cc); t += 1) { cc += t % 2 ? 1 : 0; rr += t % 2 ? 0 : 1; }
+      if (nearArt(rr, cc)) continue;
       const x = (cc - o) * cell, z = (rr - o) * cell;
       const dx = x - foot.x, dz = (z - foot.z) * front;
-      if (Math.hypot(dx, dz) < 0.8 * H) continue;
-      // Where the big unit lies in the code and its modules lift off.
-      if (dx > -0.5 * H && dx < 1.7 * H && dz > -1.15 * H && dz < 0.35 * H) continue;
-      if (dx > -0.2 * H && dx < 1.6 * H && Math.abs(dz) < 0.3 * H) continue;
-      spots.push({ x, z, dx, dz, d: Math.hypot(dx, dz), phase: rnd(), jit: rnd(), jit2: rnd(), hz: 0.8 + rnd() * 0.45, yaw: (rnd() - 0.5) * 0.9, cyc: 0.8 + rnd() * 0.45 });
+      if (Math.hypot(dx, dz) < 0.32 * H) continue;
+      spots.push({ x, z, dx, dz, d: Math.hypot(dx, dz), dc: Math.hypot(cc - o, (rr - o) * 0.55), phase: rnd(), jit: rnd(), jit2: rnd(), hz: 0.8 + rnd() * 0.45, yaw: (rnd() - 0.5) * 0.9, cyc: 0.8 + rnd() * 0.45 });
     }
   }
-  // Nearest first (the crowd starts round the hero), within the share of the field the camera ever sees.
-  spots.sort((a, b) => a.d - b.d);
+  spots.sort((a, b) => a.dc - b.dc);
+  // The ones nearest the middle of the screen-filling code (portrait: rows count less).
   const list = spots.slice(0, Math.max(0, Math.min(150, Math.round(M.count))));
   const maxD = Math.max(1e-3, ...list.map((m) => m.d));
   // Line-up slots: rows behind the hero, nearest first, with a gap behind the hero itself.
@@ -6162,8 +6172,9 @@ function minisFrame(T) {
     _mo.y += 0.066 * H * sk * Math.abs(Math.sin(tilt)) - (bob + hop) * (1 - Math.min(1, stand));
     _mm.compose(_mo, _mq, _ms);
     mi.body.setMatrixAt(n, _mm);
-    _ms.set(sk * (1 - 0.3 * Math.min(1, bob / (0.1 * H * k + 1e-6))), sk, sk * (1 + 1.9 * (1 - Math.min(1, stand))));
-    _mv.set(x, 0, z - mi.front * 0.45 * H * sk * (1 - Math.min(1, stand)));
+    const shk = sk * m1smooth(stand / 0.9);
+    _ms.set(shk * (1 - 0.3 * Math.min(1, bob / (0.1 * H * k + 1e-6))), shk, shk);
+    _mv.set(x, 0, z);
     _mm.compose(_mv, _mqy, _ms);
     mi.shadow.setMatrixAt(n, _mm);
     _ms.set(sk / Math.sqrt(sq), sk * sq, sk / Math.sqrt(sq));
