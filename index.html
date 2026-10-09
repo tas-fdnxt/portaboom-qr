@@ -7,11 +7,11 @@
 <meta name="robots" content="noindex,nofollow">
 <title>PORTABOOM QR</title>
 <meta property="og:title" content="PORTABOOM QR">
-<meta property="og:description" content="Scan the PORTABOOM QR and watch the PB4000 stand up out of it.">
-<meta property="og:image" content="https://tas-fdnxt.github.io/portaboom-qr/portaboom-morph-qr.png">
+<meta property="og:description" content="Scan the PORTABOOM QR and watch its modules build the PB4000.">
+<meta property="og:image" content="https://tas-fdnxt.github.io/portaboom-qr/portaboom-morph2-qr.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://tas-fdnxt.github.io/portaboom-qr/portaboom-morph-qr.png">
+<meta name="twitter:image" content="https://tas-fdnxt.github.io/portaboom-qr/portaboom-morph2-qr.png">
 <style>
 :root{
   --soft:#101317; --paper:#FFFFFF; --ink:#F4F6F9; --ink-soft:#C5CAD3;
@@ -101,7 +101,16 @@ body.morph1.morph1-scanning #morph1ScanFx{display:block}
 </style>
 </head>
 <body class="live-scan">
-<img id="morph1Still" src="./portaboom-morph-qr.png?b=389bfc9f" alt="" aria-hidden="true">
+<img id="morph1Still" alt="" aria-hidden="true">
+<script>
+(function () {
+  // Pick the still for the mode before first paint (morph2 draws the unit in QR modules).
+  const DEFAULT_V = "morph2";
+  const v = new URLSearchParams(location.search).get("v") || DEFAULT_V;
+  const img = document.getElementById("morph1Still");
+  if (img) img.src = v === "morph2" ? "./portaboom-morph2-qr.png?b=b034e56e" : "./portaboom-morph-qr.png?b=b034e56e";
+})();
+</script>
 <button id="morph1Scan" type="button" aria-label="Tap to scan the PORTABOOM QR code"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3M6 12h12"/></svg><span>Tap to scan</span></button>
 <div id="morph1ScanFx" aria-hidden="true"><i class="br tl"></i><i class="br tr"></i><i class="br bl"></i><i class="br brr"></i><i class="glow"></i><i class="line"></i></div>
 <video id="morph1Video" muted playsinline webkit-playsinline preload="none" aria-label="PORTABOOM PB4000 stands up out of the QR"></video>
@@ -113,7 +122,7 @@ body.morph1.morph1-scanning #morph1ScanFx{display:block}
   <div class="row">
     <div class="badge" id="modeBadge">Living QR</div>
     <a class="brand" href="https://www.trafficaccess.com.au/portaboom-product/portaboom-pb4000-series/" target="_blank" rel="noopener">
-      <img src="./portaboom_logo.png?b=389bfc9f" alt="PORTABOOM"><span>PB4000</span>
+      <img src="./portaboom_logo.png?b=b034e56e" alt="PORTABOOM"><span>PB4000</span>
     </a>
   </div>
   <div class="dock" id="liveDock">
@@ -132,13 +141,14 @@ body.morph1.morph1-scanning #morph1ScanFx{display:block}
 }}
 </script>
 <div id="motionHint">Tap to flatten</div>
-<!-- Mode loader. No v= opens morph1: flat PORTABOOM QR, rise into the 3D field, boom cycle, then DEST. -->
+<!-- Mode loader. No v= opens morph2: the module QR, scan, modules fly into the 3D unit, boom cycle, then DEST. -->
 <script>
 (function () {
   const q = new URLSearchParams(location.search);
   // Mode when the URL has no v=.
-  const DEFAULT_V = "morph1";
-  const morph1 = q.get("v") === "morph1" || (!q.get("v") && DEFAULT_V === "morph1");
+  const DEFAULT_V = "morph2";
+  const morph2 = q.get("v") === "morph2" || (!q.get("v") && DEFAULT_V === "morph2");
+  const morph1 = morph2 || q.get("v") === "morph1" || (!q.get("v") && DEFAULT_V === "morph1");
   const motion1 = q.get("v") === "motion1";
   const motion2 = q.get("v") === "motion2";
   const motion3 = q.get("v") === "motion3";
@@ -162,6 +172,7 @@ body.morph1.morph1-scanning #morph1ScanFx{display:block}
   }
   if (morph1) {
     document.body.classList.add("morph1");
+    if (morph2) document.body.classList.add("morph2");
     // A press before the 3D scene is up is remembered; app.js starts the scan when ready.
     const btn = document.getElementById("morph1Scan");
     if (btn) btn.addEventListener("click", () => { window.__morph1ScanQueued = true; btn.classList.add("pressed"); });
@@ -171,7 +182,7 @@ body.morph1.morph1-scanning #morph1ScanFx{display:block}
     let fallen = false;
     let played = false;
     const leave = () => {
-      import("./dest-config.mjs?b=389bfc9f").then((m) => {
+      import("./dest-config.mjs?b=b034e56e").then((m) => {
         const dest = m.resolveLeaveDest(q.get("dest"));
         if (typeof window.__iqrOnLeaveToDest === "function") window.__iqrOnLeaveToDest({ dest, reason: "fallback-video" });
         else location.assign(dest);
@@ -200,7 +211,7 @@ body.morph1.morph1-scanning #morph1ScanFx{display:block}
       console.warn("morph1 fallback:", reason);
       document.body.classList.add("morph1-fallback");
       const v = document.getElementById("morph1Video");
-      v.src = "./morph1.mp4?b=389bfc9f";
+      v.src = morph2 ? "./morph2.mp4?b=b034e56e" : "./morph1.mp4?b=b034e56e";
       v.preload = "auto";
       if (btn) btn.addEventListener("click", () => window.__morph1Play());
       document.getElementById("morph1Still")?.addEventListener("click", () => window.__morph1Play());
@@ -211,7 +222,7 @@ body.morph1.morph1-scanning #morph1ScanFx{display:block}
     // Back from DEST via bfcache: start clean instead of resuming a finished run.
     addEventListener("pageshow", (e) => { if (e.persisted) location.reload(); });
   }
-  const src = morph1 ? "./app.js?b=389bfc9f&v=morph1" : motion3 ? "./app.js?b=389bfc9f&v=motion3" : motion2 ? "./app.js?b=389bfc9f&v=motion2" : motion1 ? "./app.js?b=389bfc9f&v=motion1" : "./app.js?b=389bfc9f&v=living10";
+  const src = morph2 ? "./app.js?b=b034e56e&v=morph2" : morph1 ? "./app.js?b=b034e56e&v=morph1" : motion3 ? "./app.js?b=b034e56e&v=motion3" : motion2 ? "./app.js?b=b034e56e&v=motion2" : motion1 ? "./app.js?b=b034e56e&v=motion1" : "./app.js?b=b034e56e&v=living10";
   const s = document.createElement("script");
   s.type = "module";
   s.src = src;

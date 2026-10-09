@@ -2,15 +2,16 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-import { DEST, ECC, encodeDestMatrix, downloadPrintPng } from "./qr-encode.js?b=389bfc9f";
-import { buildLivingQr } from "./living-qr.js?b=389bfc9f";
-import { encodeTipMatrix, unpackMask, MORPH_PALETTE } from "./qr-url.js?b=389bfc9f";
-import { MORPH_MASK } from "./morph-mask.js?b=389bfc9f";
+import { DEST, ECC, encodeDestMatrix, downloadPrintPng } from "./qr-encode.js?b=b034e56e";
+import { buildLivingQr } from "./living-qr.js?b=b034e56e";
+import { encodeTipMatrix, unpackMask, MORPH_PALETTE } from "./qr-url.js?b=b034e56e";
+import { MORPH_MASK } from "./morph-mask.js?b=b034e56e";
+import { encodeMorph2, ART } from "./morph2-art.js?b=b034e56e";
 import {
   SHOWTIME_DEST_DEFAULT,
   parseHttpUrl,
   resolveLeaveDest,
-} from "./dest-config.mjs?b=389bfc9f";
+} from "./dest-config.mjs?b=b034e56e";
 
 const NAVY = 0x1b2a4a;
 const ORANGE = 0xee7202;
@@ -597,15 +598,19 @@ const motion2Wanted = pageParams.get("v") === "motion2";
  * The loader in index.html may pass the mode as app.js?v=morph1.
  */
 const modeParam = pageParams.get("v") || new URL(import.meta.url).searchParams.get("v") || "";
-const morph1Wanted = modeParam === "morph1";
+/** morph2 runs on the morph1 frame (one surface, scan, camera, end scene) with module art and a voxel morph. */
+const morph2Wanted = modeParam === "morph2";
+const morph1Wanted = modeParam === "morph1" || morph2Wanted;
 const motion3Wanted = pageParams.get("v") === "motion3" || morph1Wanted;
 /** morph1 field matrix comes from the tip URL the still encodes, not DEST. */
-const MORPH1_TIP_URL = new URL("./?v=morph1", import.meta.url).href;
-const morph1Qr = morph1Wanted ? encodeTipMatrix(MORPH1_TIP_URL) : null;
+const MORPH1_TIP_URL = new URL(morph2Wanted ? "./?v=morph2" : "./?v=morph1", import.meta.url).href;
+const morph2Qr = morph2Wanted ? encodeMorph2(MORPH1_TIP_URL) : null;
+const morph1Qr = morph2Qr ? { url: morph2Qr.url, ecc: morph2Qr.ecc, version: morph2Qr.version, size: morph2Qr.size, matrix: morph2Qr.matrix }
+  : (morph1Wanted ? encodeTipMatrix(MORPH1_TIP_URL) : null);
 /** ?m1bake=1: render the lying unit alone for the still (no knockout yet). */
 const morph1BakeMode = morph1Wanted && pageParams.get("m1bake") === "1";
-const morph1Mask = morph1Qr && !morph1BakeMode ? unpackMask(MORPH_MASK, morph1Qr.size) : null;
-if (morph1Qr && !morph1BakeMode && !morph1Mask) console.warn("morph1 unit mask missing for this grid size");
+const morph1Mask = morph1Qr && !morph2Wanted && !morph1BakeMode ? unpackMask(MORPH_MASK, morph1Qr.size) : null;
+if (morph1Qr && !morph2Wanted && !morph1BakeMode && !morph1Mask) console.warn("morph1 unit mask missing for this grid size");
 const morph1Masked = (r, c) => !!(morph1Mask && morph1Mask[r * morph1Qr.size + c]);
 /** Lying unit length (boom up, laid along the ground) as a fraction of the symbol side. */
 const MORPH1_UNIT_SPAN = 0.85;
@@ -2777,7 +2782,7 @@ function addLogoDecal(root) {
   stale.forEach((o) => o.parent && o.parent.remove(o));
 
   const loader = new THREE.TextureLoader();
-  const src = "./door_decal.png?b=389bfc9f";
+  const src = "./door_decal.png?b=b034e56e";
   loader.load(src, (tex) => {
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
@@ -2833,6 +2838,8 @@ function addLogoDecal(root) {
       plate.position.set(x, y, z);
       plate.rotation.y = yaw;
       plate.userData.decal = true;
+      // morph2: the decal loads late; it stays under the reveal plane like the rest of the unit.
+      if (morph2Wanted) morph2Clip(plate);
       root.add(plate);
     };
     // Front approach (cabinet door / viewer after instance.ts Math.PI plant)
@@ -2842,7 +2849,7 @@ function addLogoDecal(root) {
     root.userData.logoLocalW = logoW;
     root.userData.logoWorldW = logoW * (root.scale?.x || 1);
   }, undefined, () => {
-    loader.load("./portaboom_logo.png?b=389bfc9f", (tex) => {
+    loader.load("./portaboom_logo.png?b=b034e56e", (tex) => {
       tex.colorSpace = THREE.SRGBColorSpace;
       const plate = new THREE.Mesh(
         new THREE.PlaneGeometry(0.26, 0.26 * 0.698),
@@ -2852,6 +2859,7 @@ function addLogoDecal(root) {
       plate.position.set(0, -0.3, -0.255);
       plate.rotation.y = Math.PI;
       root.add(plate);
+      if (morph2Wanted) morph2Clip(plate);
     });
   });
 }
@@ -3487,7 +3495,7 @@ function mountCad(gltf, label) {
   }
 }
 
-const NAMED = new URL("./pb4000_named.glb?b=389bfc9f", import.meta.url).href;
+const NAMED = new URL("./pb4000_named.glb?b=b034e56e", import.meta.url).href;
 
 function loadNamed(reason) {
   console.warn(reason);
@@ -3814,6 +3822,10 @@ function morph1Init() {
   shadow.userData.m1off = true; // sun shadows read as ghost boxes; contact shadow only
   grid.add(shadow);
   morph1.shadow = shadow;
+  if (morph2Wanted) {
+    for (const m of mods) m.visible = false;
+    morph2Init();
+  }
   morph1PrepareUnit(boom);
   const scanBtn = document.getElementById("morph1Scan");
   if (scanBtn) scanBtn.addEventListener("click", () => morph1Tap());
@@ -4112,7 +4124,7 @@ function morph1Resize() {
   morph1.doorPose = morph1DoorPose();
 }
 
-function morph1ApplyCamera(u) {
+function morph1ApplyCamera(u, shiftPow = 1) {
   const a = morph1.scanPose;
   const b = morph1.doorPose || a;
   if (!a) return;
@@ -4134,7 +4146,7 @@ function morph1ApplyCamera(u) {
   morph1Cam.far = dist + 60;
   morph1Cam.updateProjectionMatrix();
   // Lens shift (off-axis frustum): moves the picture, never tilts the camera.
-  const sx = THREE.MathUtils.lerp(a.shiftX, b.shiftX, e);
+  const sx = THREE.MathUtils.lerp(a.shiftX, b.shiftX, Math.pow(e, shiftPow));
   const sy = THREE.MathUtils.lerp(a.shiftY, b.shiftY, e);
   morph1Cam.projectionMatrix.elements[8] = -sx;
   morph1Cam.projectionMatrix.elements[9] = -sy;
@@ -4244,6 +4256,10 @@ function morph1SetClip(root, on) {
 /** Called for the stand-in and again when the GLB mounts. */
 function morph1PrepareUnit(root) {
   if (!morph1Wanted || !root) return;
+  if (morph2Wanted) {
+    morph2Clip(root);
+    return;
+  }
   if (morph1.phase === "flat" || morph1.phase === "rise") morph1SetClip(root, true);
 }
 
@@ -4478,6 +4494,7 @@ function morph1CaptureRest() {
   morph1ArmAt(0);
   boom.visible = vis;
   boom.updateMatrixWorld(true);
+  if (morph2Wanted) morph2Prepare();
 }
 
 function morph1StartRise() {
@@ -4555,6 +4572,7 @@ function morph1BeginScan() {
     btn.classList.add("pressed");
     btn.setAttribute("aria-disabled", "true");
   }
+  if (morph2Wanted) return; // morph2 buzzes on the finder lock instead
   try {
     if (navigator.vibrate) navigator.vibrate([18, 40, 28]);
   } catch (err) {
@@ -4606,6 +4624,13 @@ function morph1Look() {
 
 function morph1FlatFrame() {
   morph1Look();
+  if (morph2Wanted) {
+    if (boom) boom.visible = morph1.restReady;
+    if (morph1.restReady) morph2Park();
+    setSignalAspect("red");
+    morph1ApplyCamera(0);
+    return;
+  }
   for (const m of mods) {
     m.position.y = 0;
     m.rotation.y = 0;
@@ -4632,6 +4657,7 @@ function morph1FlatFrame() {
  * standing unit stay hidden. Nothing grows tall.
  */
 function morph1TileFloor(tr) {
+  if (morph2Wanted) return;
   for (const m of mods) {
     const cap = m.userData.m1cap;
     if (!cap) continue;
@@ -4690,7 +4716,7 @@ function morph1Tick(dt, t) {
       morph1Resize();
     }
     // The scan (and with it the morph) only starts once the canvas has replaced the still.
-    if (unitOk && morph1.restReady && morph1.handedOver && !window.__morph1Freeze) {
+    if (unitOk && morph1.restReady && morph1.handedOver && (!morph2Wanted || morph2.ready) && !window.__morph1Freeze) {
       if (morph1.scanQueued) morph1BeginScan();
       else if (morph1Autoplay && elapsed >= MORPH1_FLAT_MIN_S) morph1BeginScan();
     }
@@ -4698,9 +4724,19 @@ function morph1Tick(dt, t) {
   }
   if (morph1.phase === "scan") {
     morph1FlatFrame();
+    if (morph2Wanted) {
+      const p2 = (now - morph1.scanAt) / 1000 / MORPH2_SCAN_S;
+      morph2ScanFx(Math.min(1, p2));
+      if (p2 >= 1) morph2StartMorph();
+      return;
+    }
     const p = (now - morph1.scanAt) / 1000 / MORPH1_SWEEP_S;
     morph1ScanFx(Math.min(1, p));
     if (p >= 1) morph1StartRise();
+    return;
+  }
+  if (morph1.phase === "rise" && morph2Wanted) {
+    morph2Rise((now - morph1.riseAt) / 1000);
     return;
   }
   if (morph1.phase === "rise") {
@@ -4815,9 +4851,868 @@ function morph1Snapshot() {
     standBox: morph1.standBox ? { min: morph1.standBox.min.toArray(), max: morph1.standBox.max.toArray() } : null,
     padSize: living.padSize,
     cell: living.cell,
+    mode: morph2Wanted ? "morph2" : "morph1",
+    morph2: morph2Wanted ? { ...morph2.stats, mask: morph2Qr.mask, artCells: morph2Qr.artCells, artFrac: +morph2Qr.artFrac.toFixed(4), ready: morph2.ready,
+      colorRows: morph2Qr.colors.map((row) => row.map((c) => (c ? c.slice(1) : "-")).join(",")) } : null,
     matrixRows: morph1Qr.matrix.map((row, r) => row.map((bit, c) => (morph1Masked(r, c) ? 0 : bit)).join("")),
     maskRows: morph1Qr.matrix.map((row, r) => row.map((bit, c) => (morph1Masked(r, c) ? 1 : 0)).join("")),
   };
+}
+
+/* ------------------------------------------------------------------ *
+ * morph2: frame 0 is the QR with the PORTABOOM drawn in modules
+ * (morph2-art.js). Every module is an instanced cube on this canvas. After
+ * the scan the modules lift in a wave from the centre; the art modules and
+ * the nearest data modules fly on curved, staggered paths and assemble a
+ * voxel PORTABOOM sampled from the GLB surface, taking its colours on the
+ * way, while the camera comes down to eye level. The real GLB then resolves
+ * inside the voxels from the ground up (voxels shrink into its surface) and
+ * the rest of the QR settles as the navy tile floor.
+ * ------------------------------------------------------------------ */
+const MORPH2_SCAN_S = 1.8;
+const MORPH2_TILT_S = [0.05, 3.55];
+const MORPH2_FLAT_FADE_S = [0.05, 0.8];
+const MORPH2_REVEAL_S = [3.3, 4.2];
+const MORPH2_REFILL_S = [3.35, 4.35];
+const MORPH2_END_S = 4.4;
+const MORPH2_TARGET_VOXELS = 1100;
+const MORPH2_MAX_FLY = 1700;
+const MORPH2_SAMPLES = 60000;
+const MORPH2_LENS = ["#FF3A2E", "#FFAA1C", "#2CCB68"]; // top, middle, bottom
+const MORPH2_BOOM = ["#C8102E", "#F4F4F2"];
+
+const morph2 = {
+  ready: false,
+  floor: null,
+  fly: null,
+  cells: [],
+  flyers: [],
+  voxels: [],
+  voxel: 0,
+  H0: 0,
+  reveal: new THREE.Plane(new THREE.Vector3(0, -1, 0), -1e4),
+  revealFx: new THREE.Plane(new THREE.Vector3(0, -1, 0), -1e4),
+  clipMats: new Set(),
+  yMin: 0,
+  yMax: 1,
+  stats: {},
+  scanBuzzed: false,
+};
+const _m2m = new THREE.Matrix4();
+const _m2p = new THREE.Vector3();
+const _m2s = new THREE.Vector3();
+const _m2q = new THREE.Quaternion();
+const _m2c = new THREE.Color();
+const _m2a = new THREE.Vector3();
+const _m2b = new THREE.Vector3();
+const _m2d = new THREE.Vector3();
+const _m2qi = new THREE.Quaternion();
+
+function m2rng(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Module material: lit standard shading, blended with the exact print colour
+ * (uFlat = 1 on frame 0, so the canvas matches the still), plus an optional
+ * tint toward the floor navy for the end scene.
+ */
+function morph2Material(fog) {
+  const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.04, fog });
+  const u = {
+    uFlat: { value: 1 },
+    uTint: { value: new THREE.Color(MORPH1_TILE_END) },
+    uTintMix: { value: 0 },
+  };
+  mat.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, u);
+    sh.fragmentShader = "uniform float uFlat;\nuniform vec3 uTint;\nuniform float uTintMix;\n" + sh.fragmentShader
+      .replace("#include <color_fragment>", "#include <color_fragment>\n\tdiffuseColor.rgb = mix(diffuseColor.rgb, uTint, uTintMix);")
+      .replace("#include <colorspace_fragment>", "#include <colorspace_fragment>\n\tgl_FragColor.rgb = mix(gl_FragColor.rgb, sRGBTransferOETF(vec4(mix(vColor, uTint, uTintMix), 1.0)).rgb, uFlat);");
+  };
+  mat.customProgramCacheKey = () => "morph2mod" + (fog ? "f" : "");
+  mat.userData.u = u;
+  return mat;
+}
+
+function morph2Init() {
+  const q = morph2Qr;
+  const n = q.size;
+  const cell = living.cell;
+  const o = (n - 1) / 2;
+  morph2.H0 = cell * 0.07;
+  const navy = new THREE.Color(MORPH_PALETTE.navy);
+  const maxD = Math.hypot(o, o);
+  for (let r = 0; r < n; r += 1) {
+    for (let c = 0; c < n; c += 1) {
+      const drawn = q.colors[r][c];
+      const raw = q.matrix[r][c] === 1;
+      if (!drawn && !raw) continue;
+      const role = q.roles[r * n + c];
+      morph2.cells.push({
+        r, c, x: (c - o) * cell, z: (r - o) * cell,
+        drawn: drawn ? new THREE.Color(drawn) : null,
+        raw, role, art: role >= 2, ch: q.chars[r * n + c],
+        d: Math.hypot(c - o, r - o) / maxD,
+        flyer: -1,
+      });
+    }
+  }
+  const geo = new THREE.BoxGeometry(1, 1, 1);
+  const floor = new THREE.InstancedMesh(geo, morph2Material(true), morph2.cells.length);
+  // Lit tile tops would read pale blue; keep the lit floor close to print navy.
+  floor.material.color.setScalar(0.5);
+  floor.name = "Morph2Floor";
+  floor.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  floor.frustumCulled = false;
+  morph2.cells.forEach((cl, i) => floor.setColorAt(i, cl.drawn || navy));
+  const fly = new THREE.InstancedMesh(geo, morph2Material(false), MORPH2_MAX_FLY);
+  fly.name = "Morph2Fly";
+  fly.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  fly.frustumCulled = false;
+  fly.count = 0;
+  fly.setColorAt(0, navy);
+  // Soft drop shadows under lifted modules: from the top-down start they show the lift.
+  const shGeo = new THREE.PlaneGeometry(1, 1);
+  shGeo.rotateX(-Math.PI / 2);
+  const shMat = new THREE.MeshBasicMaterial({ color: 0x0b1222, transparent: true, depthWrite: false, toneMapped: false });
+  shMat.onBeforeCompile = (sh) => {
+    sh.fragmentShader = sh.fragmentShader.replace("#include <color_fragment>", "#include <color_fragment>\n\tdiffuseColor = vec4(diffuse, opacity * vColor.r);");
+  };
+  shMat.customProgramCacheKey = () => "morph2shadow";
+  const shadow = new THREE.InstancedMesh(shGeo, shMat, MORPH2_MAX_FLY);
+  shadow.name = "Morph2Shadow";
+  shadow.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  shadow.frustumCulled = false;
+  shadow.renderOrder = 2;
+  shadow.count = 0;
+  shadow.setColorAt(0, new THREE.Color(0, 0, 0));
+  scene.add(floor, fly, shadow);
+  morph2.floor = floor;
+  morph2.fly = fly;
+  morph2.shadow = shadow;
+  morph2Flat();
+  morph2ScanFxInit();
+}
+
+/** Unit materials keep the reveal plane from the start (no recompiles mid-morph). */
+function morph2Clip(root) {
+  if (!root) return;
+  root.traverse((o) => {
+    const list = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+    for (const mat of list) {
+      if (morph2.clipMats.has(mat)) continue;
+      // Glow cards, halos and decals (transparent, unlit) wait until the cubes have gone,
+      // so they never wash over the voxel shell.
+      const fx = mat.isMeshBasicMaterial || mat.blending === THREE.AdditiveBlending || (mat.transparent && mat.opacity < 0.95);
+      mat.clippingPlanes = [fx ? morph2.revealFx : morph2.reveal];
+      mat.clipShadows = true;
+      mat.needsUpdate = true;
+      morph2.clipMats.add(mat);
+    }
+  });
+}
+
+function morph2SetCell(mesh, i, x, y, z, sx, sy, sz, quat) {
+  _m2p.set(x, y, z);
+  _m2s.set(sx, sy, sz);
+  _m2m.compose(_m2p, quat || _m2qi, _m2s);
+  mesh.setMatrixAt(i, _m2m);
+}
+
+/** Frame 0: every drawn module flat on the paper, exactly where the still has it. */
+function morph2Flat() {
+  const cell = living.cell;
+  const H0 = morph2.H0;
+  const { floor, fly } = morph2;
+  morph2.cells.forEach((cl, i) => {
+    const on = cl.drawn && cl.flyer < 0;
+    morph2SetCell(floor, i, cl.x, H0 / 2, cl.z, on ? cell : 0, on ? H0 : 0, on ? cell : 0);
+  });
+  floor.instanceMatrix.needsUpdate = true;
+  for (let k = 0; k < fly.count; k += 1) {
+    const f = morph2.flyers[k];
+    morph2SetCell(fly, k, f.p0.x, H0 / 2, f.p0.z, cell, H0, cell);
+    fly.setColorAt(k, f.c0);
+  }
+  if (fly.count) {
+    fly.instanceMatrix.needsUpdate = true;
+    fly.instanceColor.needsUpdate = true;
+  }
+  floor.material.userData.u.uFlat.value = 1;
+  fly.material.userData.u.uFlat.value = 1;
+  floor.material.userData.u.uTintMix.value = 0;
+  if (morph2.shadow) morph2.shadow.count = 0;
+}
+
+/**
+ * Voxel PORTABOOM: area-weighted samples of the standing unit's surface
+ * (boom up, the pose the GLB resolves in), binned into cubes; hidden inner
+ * cubes dropped; the cube size is tuned to about MORPH2_TARGET_VOXELS.
+ */
+function morph2Voxels() {
+  const rnd = m2rng(20261009);
+  morph1UnitPose(1, 1);
+  morph1ArmAt(MORPH1_ARM_S[1]);
+  boom.visible = true;
+  boom.updateMatrixWorld(true);
+  const head = findSignalHead(boom);
+  const headSet = new Set();
+  if (head) head.traverse((o) => headSet.add(o));
+  const armSet = new Set();
+  if (boomRig?.pivot) boomRig.pivot.traverse((o) => armSet.add(o));
+  const lens = morph1LensInfo();
+  const meshes = [];
+  const cabBox = new THREE.Box3();
+  let triTotal = 0;
+  boom.traverse((o) => {
+    if (!o.isMesh || !o.geometry?.attributes?.position || !isVisibleInTree(o)) return;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    if (mats.some((m) => m && (m.isMeshBasicMaterial || m.opacity < 0.5))) return;
+    const mat = mats[0];
+    const isLens = /HeroLens|SignalLens|Lens_|灯罩/i.test(ancestorBlob(o));
+    const cls = armSet.has(o) || mat?.userData?.stripe ? "boom" : isLens ? "lens" : headSet.has(o) ? "head" : "body";
+    if (cls === "body" && mat?.color) {
+      const cs = mat.color.clone().convertLinearToSRGB();
+      if (cs.r > 0.7 && cs.g > 0.3 && cs.g < 0.62 && cs.b < 0.25) cabBox.union(new THREE.Box3().setFromObject(o));
+    }
+    const pos = o.geometry.attributes.position;
+    const idx = o.geometry.index;
+    const nt = idx ? idx.count / 3 : pos.count / 3;
+    const wp = new Float32Array(pos.count * 3);
+    for (let i = 0; i < pos.count; i += 1) {
+      _m2a.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
+      wp[i * 3] = _m2a.x; wp[i * 3 + 1] = _m2a.y; wp[i * 3 + 2] = _m2a.z;
+    }
+    const cum = new Float32Array(nt);
+    let acc = 0;
+    for (let t = 0; t < nt; t += 1) {
+      const a = idx ? idx.getX(t * 3) : t * 3;
+      const b = idx ? idx.getX(t * 3 + 1) : t * 3 + 1;
+      const c = idx ? idx.getX(t * 3 + 2) : t * 3 + 2;
+      _m2a.set(wp[b * 3] - wp[a * 3], wp[b * 3 + 1] - wp[a * 3 + 1], wp[b * 3 + 2] - wp[a * 3 + 2]);
+      _m2b.set(wp[c * 3] - wp[a * 3], wp[c * 3 + 1] - wp[a * 3 + 1], wp[c * 3 + 2] - wp[a * 3 + 2]);
+      acc += _m2d.crossVectors(_m2a, _m2b).length() * 0.5;
+      cum[t] = acc;
+    }
+    if (acc <= 0) return;
+    triTotal += nt;
+    meshes.push({ o, cls, color: mat?.color ? mat.color.clone() : new THREE.Color(0.5, 0.5, 0.5), idx, wp, cum, area: acc });
+  });
+  const totalArea = meshes.reduce((s, m) => s + m.area, 0);
+  const meshCum = [];
+  let ma = 0;
+  for (const m of meshes) { ma += m.area; meshCum.push(ma); }
+  const bsearch = (arr, v) => {
+    let lo = 0, hi = arr.length - 1;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (arr[mid] < v) lo = mid + 1; else hi = mid; }
+    return lo;
+  };
+  const S = MORPH2_SAMPLES;
+  const sx = new Float32Array(S), sy = new Float32Array(S), sz = new Float32Array(S);
+  const sm = new Uint16Array(S);
+  for (let k = 0; k < S; k += 1) {
+    const mi = bsearch(meshCum, rnd() * totalArea);
+    const m = meshes[mi];
+    const t = bsearch(m.cum, rnd() * m.area);
+    const a = m.idx ? m.idx.getX(t * 3) : t * 3;
+    const b = m.idx ? m.idx.getX(t * 3 + 1) : t * 3 + 1;
+    const c = m.idx ? m.idx.getX(t * 3 + 2) : t * 3 + 2;
+    let u = rnd(), v = rnd();
+    if (u + v > 1) { u = 1 - u; v = 1 - v; }
+    const w = 1 - u - v;
+    sx[k] = m.wp[a * 3] * w + m.wp[b * 3] * u + m.wp[c * 3] * v;
+    sy[k] = m.wp[a * 3 + 1] * w + m.wp[b * 3 + 1] * u + m.wp[c * 3 + 1] * v;
+    sz[k] = m.wp[a * 3 + 2] * w + m.wp[b * 3 + 2] * u + m.wp[c * 3 + 2] * v;
+    sm[k] = mi;
+  }
+  let minX = Infinity, minY = Infinity, minZ = Infinity;
+  for (let k = 0; k < S; k += 1) { minX = Math.min(minX, sx[k]); minY = Math.min(minY, sy[k]); minZ = Math.min(minZ, sz[k]); }
+  const bin = (s) => {
+    const map = new Map();
+    for (let k = 0; k < S; k += 1) {
+      const ix = Math.floor((sx[k] - minX) / s), iy = Math.floor((sy[k] - minY) / s), iz = Math.floor((sz[k] - minZ) / s);
+      const key = ix + iy * 2048 + iz * 4194304;
+      let e = map.get(key);
+      if (!e) { e = { ix, iy, iz, n: 0, ks: [] }; map.set(key, e); }
+      e.n += 1;
+      e.ks.push(k);
+    }
+    // Drop cubes hidden on all six sides.
+    for (const [key, e] of map) {
+      e.inner = map.has(key + 1) && map.has(key - 1) && map.has(key + 2048) && map.has(key - 2048)
+        && map.has(key + 4194304) && map.has(key - 4194304);
+    }
+    return [...map.values()].filter((e) => !e.inner);
+  };
+  let s = living.cell * 1.5;
+  let cubes = bin(s);
+  for (let it = 0; it < 4; it += 1) {
+    const ratio = cubes.length / MORPH2_TARGET_VOXELS;
+    if (Math.abs(ratio - 1) < 0.06) break;
+    s *= Math.sqrt(ratio);
+    cubes = bin(s);
+  }
+  const lensY = lens?.box ? [lens.box.min.y, lens.box.max.y] : null;
+  const armBase = boomRig?.pivot ? boomRig.pivot.getWorldPosition(new THREE.Vector3()).y : 0;
+  const voxels = cubes.map((e) => {
+    const votes = { boom: 0, lens: 0, head: 0, body: 0 };
+    const col = new THREE.Color(0, 0, 0);
+    for (const k of e.ks) {
+      const m = meshes[sm[k]];
+      votes[m.cls] += 1;
+      if (m.cls === "body" || m.cls === "head") col.r += m.color.r, col.g += m.color.g, col.b += m.color.b;
+    }
+    let cls = Object.keys(votes).reduce((a, b) => (votes[b] > votes[a] ? b : a));
+    // Lenses sit recessed under their visors: any real share of lens surface makes it a lens cube.
+    if (votes.lens >= 0.2 * e.n && cls !== "boom") cls = "lens";
+    const x = minX + (e.ix + 0.5) * s, y = minY + (e.iy + 0.5) * s, z = minZ + (e.iz + 0.5) * s;
+    let color;
+    let part = cls;
+    if (cls === "boom") {
+      color = new THREE.Color(MORPH2_BOOM[Math.floor((y - armBase) / (s * 2)) & 1 ? 1 : 0]);
+    } else if (cls === "lens" && lensY) {
+      const f = (lensY[1] - y) / Math.max(1e-6, lensY[1] - lensY[0]);
+      const li = Math.max(0, Math.min(2, Math.floor(f * 3)));
+      color = new THREE.Color(MORPH2_LENS[li]);
+      part = ["lensR", "lensA", "lensG"][li];
+    } else {
+      const nb = votes.body + votes.head;
+      color = nb ? col.multiplyScalar(1 / nb) : new THREE.Color(0.2, 0.2, 0.2);
+    }
+    // Body splits into the orange cabinet and the base (wheels, outrigger legs, feet) below it.
+    if (part === "body") part = !cabBox.isEmpty() && y < cabBox.min.y + s * 0.5 ? "base" : "cabinet";
+    return { x, y, z, color, part, flyer: -1 };
+  });
+  // Lens discs: colour every front cube over a lens (the visors hide most of the lens surface).
+  if (lensY) {
+    const cl3 = [0, 1, 2].map(() => ({ x: 0, y: 0, z: 0, n: 0, d: [] }));
+    const third = (y) => Math.max(0, Math.min(2, Math.floor(((lensY[1] - y) / Math.max(1e-6, lensY[1] - lensY[0])) * 3)));
+    for (let k = 0; k < S; k += 1) {
+      if (meshes[sm[k]].cls !== "lens") continue;
+      const c = cl3[third(sy[k])];
+      c.x += sx[k]; c.y += sy[k]; c.z += sz[k]; c.n += 1;
+    }
+    for (const c of cl3) if (c.n) { c.x /= c.n; c.y /= c.n; c.z /= c.n; }
+    for (let k = 0; k < S; k += 1) {
+      if (meshes[sm[k]].cls !== "lens") continue;
+      const c = cl3[third(sy[k])];
+      c.d.push(Math.hypot(sx[k] - c.x, sy[k] - c.y));
+    }
+    cl3.forEach((c, li) => {
+      if (!c.n) return;
+      c.d.sort((a, b) => a - b);
+      const r = c.d[Math.floor(c.d.length * 0.85)] || 0;
+      for (const v of voxels) {
+        if (v.part === "boom") continue;
+        if (Math.hypot(v.x - c.x, v.y - c.y) <= r && v.z >= c.z - s * 1.2) {
+          v.part = ["lensR", "lensA", "lensG"][li];
+          v.color = new THREE.Color(MORPH2_LENS[li]);
+        }
+      }
+    });
+  }
+  morph2.voxel = s;
+  morph2.voxels = voxels;
+  morph2.yMin = Math.min(...voxels.map((v) => v.y)) - s;
+  morph2.yMax = Math.max(...voxels.map((v) => v.y)) + s;
+  morph2.stats = { tris: triTotal, samples: S, voxels: voxels.length, voxelSize: +s.toFixed(4), voxelCells: +(s / living.cell).toFixed(2) };
+}
+
+/**
+ * Unit part of an art cell, from its letter in the GLB-derived art grid:
+ * housing and mast to the head, lenses to their lens, cabinet, flashers and
+ * decal to the cabinet, wheels, feet and legs to the base, boom and STOP disc
+ * to the arm.
+ */
+function morph2ArtPart(cl) {
+  switch (cl.ch) {
+    case "R": return "lensR";
+    case "A": return "lensA";
+    case "G": return "lensG";
+    case "H": return "head";
+    case "O": case "F": case "D": return "cabinet";
+    case "K": return "base";
+    case "r": case "W": case "S": return "boom";
+    case "N": return cl.r < morph2.cabTop ? "head" : (cl.r > morph2.cabBottom - 2 ? "base" : "cabinet");
+    default: return "cabinet";
+  }
+}
+
+/**
+ * Who flies where. Each voxel takes the art module of the same part at the
+ * same relative spot (the drawn unit becomes the 3D unit); once a part's art
+ * modules are used up, the nearest plain data modules join. Leftover art
+ * modules fly in too and melt into the unit on arrival.
+ */
+function morph2Assign() {
+  const rnd = m2rng(4242);
+  const parts = ["boom", "lensR", "lensA", "lensG", "head", "cabinet", "base"];
+  const oc = morph2.cells.filter((cl) => cl.ch === "O");
+  morph2.cabTop = Math.min(...oc.map((cl) => cl.r));
+  morph2.cabBottom = Math.max(...oc.map((cl) => cl.r));
+  const vox = morph2.voxels;
+  const cells = morph2.cells;
+  const art = cells.map((cl, i) => ({ cl, i })).filter(({ cl }) => cl.art);
+  const data = cells.map((cl, i) => ({ cl, i })).filter(({ cl }) => !cl.art && cl.raw && cl.drawn);
+  const used = new Uint8Array(cells.length);
+  for (const cl of cells) cl.flyer = -1;
+  const box2 = (pts) => {
+    const b = { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity };
+    for (const [x, y] of pts) { b.x0 = Math.min(b.x0, x); b.x1 = Math.max(b.x1, x); b.y0 = Math.min(b.y0, y); b.y1 = Math.max(b.y1, y); }
+    b.w = Math.max(1e-6, b.x1 - b.x0); b.h = Math.max(1e-6, b.y1 - b.y0);
+    return b;
+  };
+  const flyers = [];
+  const addFlyer = (cellIdx, v, dissolve) => {
+    const cl = cells[cellIdx];
+    used[cellIdx] = 1;
+    cl.flyer = flyers.length;
+    flyers.push({ cellIdx, v, dissolve, p0: new THREE.Vector3(cl.x, 0, cl.z), c0: (cl.drawn || new THREE.Color(MORPH_PALETTE.navy)).clone() });
+  };
+  for (const part of parts) {
+    const tv = vox.map((v, i) => ({ v, i })).filter(({ v }) => (part === "head" ? v.part === "head" || v.part === "lens" : v.part === part));
+    const src = art.filter(({ cl }) => morph2ArtPart(cl) === part);
+    if (!tv.length && !src.length) continue;
+    // Normalised coordinates: across x / down from the top; the boom runs along its length.
+    const isBoom = part === "boom";
+    const tb = box2(tv.map(({ v }) => (isBoom ? [v.y, 0] : [v.x, -v.y])));
+    const sb = box2(src.map(({ cl }) => (isBoom ? [cl.c, 0] : [cl.c, cl.r])));
+    const tN = ({ v }) => (isBoom ? [(v.y - tb.x0) / tb.w, 0.5] : [(v.x - tb.x0) / tb.w, (-v.y - tb.y0) / tb.h]);
+    const sN = ({ cl }) => (isBoom ? [(cl.c - sb.x0) / sb.w, 0.5 + (cl.r - (sb.y0 + sb.y1) / 2) * 0.02] : [(cl.c - sb.x0) / sb.w, (cl.r - sb.y0) / sb.h]);
+    const order = tv.slice();
+    for (let i = order.length - 1; i > 0; i -= 1) { const j = Math.floor(rnd() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+    const srcN = src.map((s) => ({ ...s, n: sN(s) }));
+    for (const t of order) {
+      const [u, w] = tN(t);
+      let best = -1, bd = Infinity;
+      for (let k = 0; k < srcN.length; k += 1) {
+        if (used[srcN[k].i]) continue;
+        const d = (srcN[k].n[0] - u) ** 2 + (srcN[k].n[1] - w) ** 2;
+        if (d < bd) { bd = d; best = k; }
+      }
+      if (best >= 0) { addFlyer(srcN[best].i, t.i, false); continue; }
+      // Art used up: nearest plain data module to where this spot sits in the drawing.
+      const gc = sb.x0 + u * sb.w;
+      const gr = isBoom ? (sb.y0 + sb.y1) / 2 : sb.y0 + w * sb.h;
+      let bi = -1, bdd = Infinity;
+      for (const d of data) {
+        if (used[d.i]) continue;
+        const dd = (d.cl.c - gc) ** 2 + (d.cl.r - gr) ** 2;
+        if (dd < bdd) { bdd = dd; bi = d.i; }
+      }
+      if (bi >= 0) addFlyer(bi, t.i, false);
+    }
+    // Art modules with no voxel left: fly in and melt into the nearest voxel of the part.
+    for (const s of srcN) {
+      if (used[s.i] || !tv.length) continue;
+      let best = 0, bd = Infinity;
+      tv.forEach((t, k) => { const [u, w] = tN(t); const d = (s.n[0] - u) ** 2 + (s.n[1] - w) ** 2; if (d < bd) { bd = d; best = k; } });
+      addFlyer(s.i, tv[best].i, true);
+    }
+  }
+  // Any art cell still unassigned (no voxels at all for its part) melts at the unit centre.
+  for (const { i } of art) if (!used[i] && vox.length) addFlyer(i, Math.floor(rnd() * vox.length), true);
+  // Flight timing and paths.
+  const yr = Math.max(1e-6, morph2.yMax - morph2.yMin);
+  const cx = morph1.finalPos ? morph1.finalPos.x : 0;
+  const cz = morph1.finalPos ? morph1.finalPos.z : 0;
+  for (const f of flyers) {
+    const v = vox[f.v];
+    const cl = cells[f.cellIdx];
+    const h = (v.y - morph2.yMin) / yr;
+    f.p3 = new THREE.Vector3(v.x, v.y, v.z);
+    f.c3 = v.color.clone();
+    f.axis = new THREE.Vector3(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).normalize();
+    if (v.part === "boom") {
+      // The boom builds as a line: modules leave in order along the drawn boom and
+      // stack straight up the arm, base first, on a shallow arc with almost no spin.
+      f.t0 = 0.3 + 0.35 * cl.d + 0.95 * h + rnd() * 0.04;
+      f.dur = 1.25 + rnd() * 0.1;
+      f.lift = 0.18 + rnd() * 0.06;
+      f.p2 = f.p3.clone().add(new THREE.Vector3(0, -0.12 - 0.1 * h, 0.05 + rnd() * 0.03));
+      f.spin = (0.25 + rnd() * 0.2) * (rnd() < 0.5 ? -1 : 1);
+    } else {
+      f.t0 = 0.22 + 0.5 * cl.d + 0.85 * h + rnd() * 0.08;
+      f.dur = 1.35 + rnd() * 0.25;
+      f.lift = 0.35 + rnd() * 0.15;
+      // Arrive from slightly above and in front, with a little sideways sweep: curved, not a swarm.
+      const out = new THREE.Vector3(v.x - cx, 0, 0);
+      out.x = Math.sign(out.x || 1) * (0.03 + rnd() * 0.06);
+      f.p2 = f.p3.clone().add(out).add(new THREE.Vector3(0, 0.16 + rnd() * 0.1, 0.06 + rnd() * 0.08));
+      f.spin = (0.8 + rnd() * 0.8) * (rnd() < 0.5 ? -1 : 1);
+    }
+    f.yv = v.y;
+  }
+  morph2.flyers = flyers;
+  morph2.fly.count = flyers.length;
+  morph2.stats.flyers = flyers.length;
+  morph2.stats.artFlyers = flyers.filter((f) => cells[f.cellIdx].art).length;
+  morph2.stats.dataFlyers = flyers.filter((f) => !cells[f.cellIdx].art).length;
+  morph2.stats.melters = flyers.filter((f) => f.dissolve).length;
+  morph2.stats.floorInstances = cells.length;
+  morph2.stats.parts = Object.fromEntries(parts.map((pt) => [pt, {
+    voxels: vox.filter((v) => v.part === pt || (pt === "head" && v.part === "lens")).length,
+    art: art.filter(({ cl }) => morph2ArtPart(cl) === pt).length,
+    artFlyers: flyers.filter((f) => cells[f.cellIdx].art && morph2ArtPart(cells[f.cellIdx]) === pt).length,
+  }]));
+  morph2.stats.lastArrival = +Math.max(...flyers.map((f) => f.t0 + f.dur)).toFixed(2);
+}
+
+/** After the GLB and the rest pose are ready: voxels, assignment, unit parked fully clipped in its final pose. */
+function morph2Prepare() {
+  if (!boom || !morph1.restReady) return;
+  const t0 = performance.now();
+  morph2Clip(boom);
+  morph2.reveal.constant = -1e4;
+  morph2.revealFx.constant = -1e4;
+  morph2Voxels();
+  morph2Assign();
+  morph2Park();
+  morph2.ready = true;
+  morph2.stats.prepareMs = Math.round(performance.now() - t0);
+  morph2Flat();
+}
+
+function morph2Park() {
+  morph1UnitPose(1, 1);
+  morph1ArmAt(MORPH1_ARM_S[1]);
+  boom.visible = true;
+  boom.updateMatrixWorld(true);
+}
+
+const _m2bez = (p0, p1, p2, p3, t, out) => {
+  const u = 1 - t;
+  const a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t;
+  return out.set(
+    a * p0.x + b * p1.x + c * p2.x + d * p3.x,
+    a * p0.y + b * p1.y + c * p2.y + d * p3.y,
+    a * p0.z + b * p1.z + c * p2.z + d * p3.z
+  );
+};
+const _m2p1 = new THREE.Vector3();
+
+/** One morph frame at T seconds after the scan. */
+function morph2Frame(T) {
+  const cell = living.cell;
+  const H0 = morph2.H0;
+  const { floor, fly } = morph2;
+  const flat = 1 - m1smooth(m1span(T, MORPH2_FLAT_FADE_S));
+  fly.material.userData.u.uFlat.value = flat;
+  // The floor wakes up lit for the wave, then settles back to the flat print navy of the end scene.
+  floor.material.userData.u.uFlat.value = Math.max(flat, m1smooth(m1span(T, [2.4, 4.0])));
+  const sh = morph2.shadow;
+  const tiltK = m1span(T, MORPH2_TILT_S);
+  sh.count = morph2.flyers.length;
+  const s3 = morph2.voxel * 0.95;
+  // Resolve: the whole GLB switches on at once inside the voxel shell (no slicing plane
+  // crossing the unit), while the cubes shrink into its surface from the base up.
+  const rv = m1span(T, MORPH2_REVEAL_S);
+  morph2.reveal.constant = T >= MORPH2_REVEAL_S[0] ? 1e4 : -1e4;
+  morph2.revealFx.constant = rv >= 0.8 ? 1e4 : -1e4;
+  const yr = Math.max(1e-6, morph2.yMax - morph2.yMin);
+  for (let k = 0; k < morph2.flyers.length; k += 1) {
+    const f = morph2.flyers[k];
+    const u = m1clamp01((T - f.t0) / f.dur);
+    let x, y, z, sx, sy, sz;
+    if (u <= 0) {
+      x = f.p0.x; y = H0 / 2; z = f.p0.z; sx = cell; sy = H0; sz = cell;
+      _m2q.identity();
+      _m2c.copy(f.c0);
+    } else {
+      const e = m1smooth(u);
+      _m2p1.set(f.p0.x, f.lift, f.p0.z);
+      _m2bez(f.p0, _m2p1, f.p2, f.p3, e, _m2a);
+      x = _m2a.x; y = Math.max(_m2a.y, H0 / 2); z = _m2a.z;
+      const g = m1smooth(m1clamp01(u * 1.6));
+      sx = sz = THREE.MathUtils.lerp(cell, s3, m1smooth(u));
+      sy = THREE.MathUtils.lerp(H0, s3, g);
+      _m2q.setFromAxisAngle(f.axis, f.spin * Math.sin(Math.PI * e));
+      // Modules stay QR navy for the first half of the flight, then take the unit's colours.
+      _m2c.copy(f.c0).lerp(f.c3, m1smooth((u - 0.45) / 0.35));
+      if (f.dissolve) {
+        const m = 1 - m1smooth((u - 0.7) / 0.3);
+        sx *= m; sy *= m; sz *= m;
+      }
+    }
+    // Resolve: the GLB appears below the rising plane; cubes shrink into its surface as it passes.
+    if (rv > 0) {
+      const kk = m1clamp01((rv - 0.5 * ((f.yv - morph2.yMin) / yr)) / 0.5);
+      const m = 1 - m1smooth(kk);
+      sx *= m; sy *= m; sz *= m;
+    }
+    morph2SetCell(fly, k, x, y, z, sx, sy, sz, _m2q);
+    fly.setColorAt(k, _m2c);
+    // Shadow on the paper, offset with height (key light from the upper left).
+    const hgt = Math.max(0, y - H0 / 2);
+    const hk = m1clamp01(hgt / 0.9);
+    const a = 0.2 * m1smooth(hgt / (cell * 0.6)) * (1 - 0.6 * hk) * (1 - m1smooth(tiltK / 0.45)) * (1 - m1smooth((u - 0.75) / 0.25));
+    const ss = sx * (1 + 0.8 * hk);
+    morph2SetCell(sh, k, x + hgt * 0.32, H0 + 0.0006, z + hgt * 0.42, a > 0.002 ? ss : 0, 1, a > 0.002 ? ss : 0);
+    sh.setColorAt(k, _m2c.setRGB(a, a, a, THREE.LinearSRGBColorSpace));
+  }
+  sh.instanceMatrix.needsUpdate = true;
+  if (sh.instanceColor) sh.instanceColor.needsUpdate = true;
+  fly.instanceMatrix.needsUpdate = true;
+  if (fly.instanceColor) fly.instanceColor.needsUpdate = true;
+  // Floor: a low wave runs out from the centre; vacated cells fill back in as plain QR navy.
+  const rf = m1span(T, MORPH2_REFILL_S);
+  morph2.cells.forEach((cl, i) => {
+    const stays = cl.drawn && cl.flyer < 0;
+    const endOn = cl.raw;
+    let s = 0;
+    let lift = 0;
+    let sy = H0;
+    if (stays) {
+      s = 1;
+      const w = (T - (0.12 + 0.55 * cl.d)) / 0.75;
+      if (w > 0 && w < 1) {
+        const hump = Math.sin(Math.PI * w);
+        lift = hump * cell * 1.2;
+        sy = H0 * (1 + 4 * hump);
+        // Tip each tile away from the centre as the wave passes, so the shading ripples outward.
+        const rx = cl.z, rz = -cl.x;
+        const rl = Math.hypot(rx, rz) || 1;
+        _m2a.set(rx / rl, 0, rz / rl);
+        _m2q.setFromAxisAngle(_m2a, 0.55 * hump);
+      } else _m2q.identity();
+      if (!endOn) s = 1 - m1smooth((rf - 0.2) / 0.5); // drawn but not data (art left behind): fades out
+    } else if (endOn) {
+      const w = m1clamp01((rf - 0.45 * cl.d) / 0.55);
+      s = w > 0 ? Math.max(0, m1outBack(w)) : 0;
+    }
+    if (!stays) _m2q.identity();
+    morph2SetCell(floor, i, cl.x, lift + sy / 2, cl.z, cell * s, sy * (s > 0 ? 1 : 0), cell * s, _m2q);
+  });
+  floor.instanceMatrix.needsUpdate = true;
+}
+
+/** End state: GLB fully shown, voxels gone, floor = the plain QR. */
+function morph2Final() {
+  morph2.reveal.constant = 1e4;
+  morph2.revealFx.constant = 1e4;
+  const { floor, fly } = morph2;
+  fly.count = 0;
+  if (morph2.shadow) morph2.shadow.count = 0;
+  const cell = living.cell;
+  const H0 = morph2.H0;
+  morph2.cells.forEach((cl, i) => {
+    const on = cl.raw;
+    morph2SetCell(floor, i, cl.x, H0 / 2, cl.z, on ? cell : 0, on ? H0 : 0, on ? cell : 0);
+  });
+  floor.instanceMatrix.needsUpdate = true;
+  floor.material.userData.u.uFlat.value = 0;
+}
+
+function morph2StartMorph() {
+  morph1.phase = "rise";
+  morph1.riseAt = performance.now();
+  morph1.marks.riseAt = morph1.riseAt - morph1.bootAt;
+  morph1.marks.unit = usingGlb ? "glb" : "stand-in";
+  morph1.doorPose = morph1DoorPose();
+  morph1.riseEnd = MORPH2_END_S;
+  const navy = new THREE.Color(MORPH_PALETTE.navy);
+  // Cells the art leaves behind come back as plain navy data modules.
+  morph2.cells.forEach((cl, i) => { if (cl.flyer >= 0 || !cl.drawn) morph2.floor.setColorAt(i, navy); });
+  morph2.floor.instanceColor.needsUpdate = true;
+  if (morph1.shadow) morph1.shadow.visible = false;
+  document.body.classList.add("morph1-rising");
+}
+
+function morph2Rise(tr) {
+  morph1Look();
+  // Starts moving sooner than morph1 so the lift reads in perspective early.
+  // The sideways lens shift comes in late so the assembling unit stays in frame.
+  morph1ApplyCamera(Math.pow(m1span(tr, MORPH2_TILT_S), 0.72), 2.2);
+  // Floor navy calms toward the end-scene tile colour with the environment.
+  morph2.floor.material.userData.u.uTintMix.value = morph1.env ? morph1.env.mix : 0;
+  morph2Park();
+  setSignalAspect("red");
+  morph2Frame(tr);
+  const rv = m1span(tr, MORPH2_REVEAL_S);
+  morph1Contact(1);
+  if (morph1.env?.contact) morph1.env.contact.material.opacity *= m1smooth(rv);
+  if (tr >= MORPH2_END_S) {
+    morph2Final();
+    morph1FinishRise();
+  }
+}
+
+/* Scan: two passes of the line over the code, then a lock pulse on the three finders and a buzz. */
+function morph2ScanFxInit() {
+  const fx = document.getElementById("morph1ScanFx");
+  if (!fx || fx.querySelector(".fp")) return;
+  const n = morph2Qr.size;
+  const dim = n + 8;
+  const pad = 0.8;
+  const size = ((7 + pad * 2) / dim) * 100;
+  const at = (m) => ((m - pad) / dim) * 100;
+  for (const [l, t] of [[4, 4], [4 + n - 7, 4], [4, 4 + n - 7]]) {
+    const el = document.createElement("i");
+    el.className = "fp";
+    Object.assign(el.style, {
+      position: "absolute", left: `${at(l)}%`, top: `${at(t)}%`, width: `${size}%`, height: `${size}%`,
+      border: "4px solid #EE7202", borderRadius: "8px", boxSizing: "border-box", opacity: "0",
+      boxShadow: "0 0 14px 3px rgba(238,114,2,.45), inset 0 0 10px 2px rgba(238,114,2,.25)",
+    });
+    fx.appendChild(el);
+  }
+}
+
+function morph2ScanFx(p) {
+  const fx = document.getElementById("morph1ScanFx");
+  const btn = document.getElementById("morph1Scan");
+  if (btn) {
+    if (p > 0.08) btn.classList.remove("pressed");
+    btn.style.opacity = String(1 - m1clamp01((p - 0.04) / 0.16));
+    if (p >= 1) btn.hidden = true;
+  }
+  if (p >= 0.8 && !morph2.scanBuzzed) {
+    morph2.scanBuzzed = true;
+    morph1.marks.lockAt = performance.now() - morph1.bootAt;
+    try {
+      if (navigator.vibrate) navigator.vibrate([16, 45, 26]);
+    } catch (err) {
+      // vibration is optional
+    }
+  }
+  if (!fx) return;
+  fx.style.opacity = String(m1clamp01(p / 0.06) * (1 - m1clamp01((p - 0.92) / 0.08)));
+  const side = fx.clientHeight || 1;
+  const down = m1smooth(m1clamp01((p - 0.04) / 0.36));
+  const up = m1smooth(m1clamp01((p - 0.44) / 0.32));
+  const y = (p < 0.42 ? down : 1 - up) * side;
+  const lineA = 1 - m1clamp01((p - 0.76) / 0.05);
+  const line = fx.querySelector(".line");
+  const glow = fx.querySelector(".glow");
+  if (line) {
+    line.style.transform = `translateY(${y.toFixed(1)}px)`;
+    line.style.opacity = String(lineA);
+  }
+  if (glow) {
+    // The glow trails the line: above it on the way down, below it on the way up.
+    glow.style.transform = p < 0.42
+      ? `translateY(calc(${y.toFixed(1)}px - 100%))`
+      : `translateY(${y.toFixed(1)}px) scaleY(-1)`;
+    glow.style.transformOrigin = "top";
+    glow.style.opacity = String(lineA);
+  }
+  const lock = m1clamp01((p - 0.78) / 0.07);
+  const pulse = Math.sin(Math.PI * m1clamp01((p - 0.78) / 0.14));
+  const k = (1.06 - 0.06 * m1smooth(p / 0.2)) * (1 - 0.035 * pulse);
+  for (const br of fx.querySelectorAll(".br")) br.style.transform = `scale(${k.toFixed(4)})`;
+  for (const fp of fx.querySelectorAll(".fp")) {
+    fp.style.opacity = String(m1smooth(lock) * (1 - m1clamp01((p - 0.9) / 0.1)));
+    fp.style.transform = `scale(${(1.3 - 0.3 * m1smooth(lock) + 0.06 * pulse).toFixed(4)})`;
+  }
+  if (p >= 1) document.body.classList.remove("morph1-scanning");
+}
+
+/**
+ * Build-time hook for scripts/bake-morph2-art.mjs: the lying unit (on its
+ * back, boom down along the ground) rendered alone, orthographic top-down,
+ * on a magenta key. mode "color": flat base colours (decal kept);
+ * mode "id": one flat colour per part class, for quantising to modules.
+ */
+const MORPH2_ID = {
+  housing: 0x101010, lensR: 0xff0000, lensA: 0xffaa00, lensG: 0x00ff00, boom: 0xffffff, stop: 0xaa0000,
+  cabinet: 0xff7700, decal: 0xffffaa, steel: 0x0000ff, dark: 0x333333, flasher: 0x00ffff,
+};
+function morph2Bake(ppw, mode = "id") {
+  if (!morph1.restReady || !boom) return null;
+  morph1UnitPose(0, 0);
+  morph1ArmAt(0);
+  setSignalAspect("red");
+  boom.visible = true;
+  boom.updateMatrixWorld(true);
+  const box = m1Box(boom);
+  const head = findSignalHead(boom);
+  const headSet = new Set();
+  if (head) head.traverse((o) => headSet.add(o));
+  const headBox = head ? worldBox(head) : null;
+  const armSet = new Set();
+  if (boomRig?.pivot) boomRig.pivot.traverse((o) => armSet.add(o));
+  const lens = morph1LensInfo();
+  const tagOf = (c) => {
+    const hexes = { cabinet: LIVERY.Y, steel: LIVERY.S, dark: LIVERY.K, red: LIVERY.R };
+    let best = "steel", bd = Infinity;
+    const cs = c.clone().convertLinearToSRGB();
+    for (const [k, h] of Object.entries(hexes)) {
+      const t = new THREE.Color(h);
+      const d = (t.r - cs.r) ** 2 + (t.g - cs.g) ** 2 + (t.b - cs.b) ** 2;
+      if (d < bd) { bd = d; best = k; }
+    }
+    return best;
+  };
+  const saved = [];
+  const counts = {};
+  boom.traverse((o) => {
+    if (!o.isMesh && !o.isSprite) return;
+    const m0 = Array.isArray(o.material) ? o.material[0] : o.material;
+    saved.push([o, o.material, o.visible, o.layers.mask]);
+    if (!m0 || m0.opacity < 0.5 || (m0.isMeshBasicMaterial && m0.transparent) || o.isSprite) {
+      o.visible = false;
+      return;
+    }
+    const blob = ancestorBlob(o);
+    const c = new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3());
+    let cls;
+    const isLens = /HeroLens|SignalLens|Lens_|灯罩/i.test(blob);
+    if (armSet.has(o) || m0.userData?.stripe) cls = /stop/i.test(blob) ? "stop" : "boom";
+    else if (isLens && headBox && headBox.containsPoint(c) && lens?.box) {
+      // Lying on its back the top of the unit points to -Z: the red lens has the smallest z.
+      const f = (c.z - lens.box.min.z) / Math.max(1e-6, lens.box.max.z - lens.box.min.z);
+      cls = f < 1 / 3 ? "lensR" : f < 2 / 3 ? "lensA" : "lensG";
+    } else if (isLens) cls = "flasher";
+    else if (headSet.has(o)) cls = "housing";
+    else if (m0.map) cls = "decal";
+    else {
+      const t = tagOf(m0.color || new THREE.Color(0.5, 0.5, 0.5));
+      cls = t === "red" ? "stop" : t;
+    }
+    counts[cls] = (counts[cls] || 0) + 1;
+    const col = mode === "id" ? new THREE.Color(MORPH2_ID[cls]) : (m0.color ? m0.color.clone() : new THREE.Color(1, 1, 1));
+    o.material = new THREE.MeshBasicMaterial({
+      color: col, map: mode === "id" ? null : (m0.map || null), side: THREE.DoubleSide, toneMapped: false, fog: false,
+    });
+    o.layers.set(7);
+  });
+  const margin = living.cell * 2;
+  const x0 = box.min.x - margin, x1 = box.max.x + margin, z0 = box.min.z - margin, z1 = box.max.z + margin;
+  const cam = new THREE.OrthographicCamera((x0 - x1) / 2, (x1 - x0) / 2, (z1 - z0) / 2, (z0 - z1) / 2, 0.01, 100);
+  cam.position.set((x0 + x1) / 2, 30, (z0 + z1) / 2);
+  cam.up.set(0, 0, -1);
+  cam.lookAt((x0 + x1) / 2, 0, (z0 + z1) / 2);
+  cam.layers.set(7);
+  cam.updateProjectionMatrix();
+  const W = Math.round((x1 - x0) * ppw), H = Math.round((z1 - z0) * ppw);
+  const savedPR = renderer.getPixelRatio();
+  const savedSize = renderer.getSize(new THREE.Vector2());
+  const savedBg = scene.background;
+  const savedTM = renderer.toneMapping;
+  const savedClip = renderer.localClippingEnabled;
+  scene.background = new THREE.Color(0xff00ff);
+  renderer.toneMapping = THREE.NoToneMapping;
+  renderer.localClippingEnabled = false;
+  renderer.setPixelRatio(1);
+  renderer.setSize(W, H, false);
+  renderer.render(scene, cam);
+  const url = renderer.domElement.toDataURL("image/png");
+  for (const [o, m, v, l] of saved) { o.material = m; o.visible = v; o.layers.mask = l; }
+  scene.background = savedBg;
+  renderer.toneMapping = savedTM;
+  renderer.localClippingEnabled = savedClip;
+  renderer.setPixelRatio(savedPR);
+  renderer.setSize(savedSize.x, savedSize.y, false);
+  if (morph2Wanted && morph2.ready) morph2Park();
+  return { url, W, H, ppw, x0, x1, z0, z1, cell: living.cell, counts, ids: MORPH2_ID };
 }
 
 morph1Init();
@@ -4825,6 +5720,8 @@ morph1Init();
 const clock = new THREE.Clock();
 function tick() {
   requestAnimationFrame(tick);
+  // The fallback video owns the screen: stop drawing the hidden 3D scene.
+  if (morph1Wanted && morph1.phase === "fallback") return;
   const dt = Math.min(0.05, clock.getDelta());
   const t = clock.elapsedTime;
   tickCamGlide(dt);
@@ -4976,6 +5873,8 @@ syncModeHud();
 window.__iqr = {
   get morph1() { return morph1Snapshot(); },
   morph1Bake: (px, bg) => morph1Bake(px, bg),
+  morph2Bake: (ppw, mode) => morph2Bake(ppw, mode),
+  get scene() { return scene; },
   morph1Measure: () => morph1Measure(),
   startShowtime,
   settleShowtime,

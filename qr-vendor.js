@@ -422,6 +422,12 @@ var qrcode = function() {
       return _moduleCount;
     };
 
+    /** Fixed version only: build with a chosen mask pattern (0-7). Added for the PORTABOOM art QR. */
+    _this.makeWithMask = function(maskPattern) {
+      if (_typeNumber < 1) throw new Error("makeWithMask needs a fixed version");
+      makeImpl(false, maskPattern);
+    };
+
     _this.make = function() {
       if (_typeNumber < 1) {
         var typeNumber = 1;

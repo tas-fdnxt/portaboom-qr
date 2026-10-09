@@ -5,7 +5,7 @@
  * encodeUrlMatrix(TIP_URL), so the still and frame 0 share one matrix.
  * Encoder: vendored qrcode-generator (MIT), no CDN at runtime.
  */
-import qrcode from "./qr-vendor.js?b=389bfc9f";
+import qrcode from "./qr-vendor.js?b=b034e56e";
 
 export const MORPH_ECC = "H";
 
