@@ -299,5 +299,44 @@
         "tilt_start_s": 0.7
       }
     }
+  },
+  "rain": {
+    "_about": "rain look (?v=rain). Times are seconds after the scan fill, like resolve.start_s. The base block changes the shared timing for this version only (later resolve and glide, so the stack finishes first).",
+    "shoot_start_s": 0.1,
+    "shoot_spread_s": 0.45,
+    "shoot_speed": 7,
+    "rain_start_s": 1.0,
+    "rain_s": 2.2,
+    "drop_height": 2.2,
+    "gravity": 9,
+    "drift": 1,
+    "tumble": 6,
+    "layer_mix": 0.08,
+    "bounce_cells": 0.5,
+    "bounce_hz": 6,
+    "bounce_damping": 7,
+    "settle_s": 0.4,
+    "dust": 0.6,
+    "dust_count": 36,
+    "dust_size": 0.1,
+    "dust_s": 1.1,
+    "dust_at_tip": false,
+    "shake": 0.012,
+    "shake_s": 0.2,
+    "colours": {
+      "orange": "#EE7202",
+      "navy": "#1B2A4A",
+      "dust": "#B8A88C"
+    },
+    "base": {
+      "resolve": {
+        "start_s": 4.0
+      },
+      "morph_end_s": 5.5,
+      "camera": {
+        "tilt_end_s": 3.9,
+        "glide_start_s": 4.3
+      }
+    }
   }
 }
