@@ -27,6 +27,7 @@ Useful settings:
 - Camera: framing at the end (`unit_height` is the share of the screen height the unit fills, `unit_height_boom_down` the slightly wider frame once the boom is down, `lens_y` where the lights sit, `left_margin`), `pitch_deg` (0 = eye level), and the glide round the unit (`glide_yaw_deg`, `glide_start_s`, `glide_s`).
 - Light cycle and Boom: green, amber and red times, how long the boom takes to come down, and the pause before the page opens the DEST link.
 - DEST link: the web page that opens at the end.
+- Minions (only used by ?v=minions; pick "minions" in the editor's Version menu): `count` (how many little PORTABOOMs, 30 to 80), `spacing_cells` (how far apart they pop up, in QR squares), `size` (their height as a share of the big unit), `pop_start_s`, `pop_spread_s` and `pop_s` (when they start popping up, how long the wave takes and how long one pop takes), `stand_up_s` and `stand_up_spread_s` (when they get up off their backs), `bob` and `bob_hz` (how high and how fast they bob), `cycle_s` (each one's own green, amber, red and boom cycle), `arm_length`, `duck_s` (when the ones between the camera and the big unit duck away), `line_up_s` and `line_up_duration_s` (when they fall into rows behind the big unit), and `rows`, `row_gap`, `col_gap` for the rows.
 
 The page starts on its own (no button), and so does the preview. To get the old "Tap to scan" button for testing, add `&test=1` to the page link, for example https://tas-fdnxt.github.io/portaboom-qr/?v=morph3&test=1.
 

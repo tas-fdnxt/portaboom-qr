@@ -224,7 +224,7 @@ body.morph1.morph1-scanning #morph1ScanFx{display:block}
       console.warn("morph1 fallback:", reason);
       document.body.classList.add("morph1-fallback");
       const v = document.getElementById("morph1Video");
-      v.src = minions ? "./morph3.mp4?b=c48638ba" : road ? "./road.mp4?b=8f51c13f" : morph3 ? "./morph3.mp4?b=c48638ba" : morph2 ? "./morph2.mp4?b=b034e56e" : "./morph1.mp4?b=b034e56e";
+      v.src = minions ? "./minions.mp4?b=363cd1d5" : road ? "./road.mp4?b=8f51c13f" : morph3 ? "./morph3.mp4?b=c48638ba" : morph2 ? "./morph2.mp4?b=b034e56e" : "./morph1.mp4?b=b034e56e";
       v.preload = "auto";
       if (btn) btn.addEventListener("click", () => window.__morph1Play());
       document.getElementById("morph1Still")?.addEventListener("click", () => window.__morph1Play());
@@ -235,7 +235,7 @@ body.morph1.morph1-scanning #morph1ScanFx{display:block}
     // Back from DEST via bfcache: start clean instead of resuming a finished run.
     addEventListener("pageshow", (e) => { if (e.persisted) location.reload(); });
   }
-  const src = minions ? "./app-minions.js?b=23a44ea7&v=minions" : road ? "./app-road.js?b=8c24aeb6&v=road" : morph3 ? "./app3.js?b=609021df&v=morph3" : morph2 ? "./app.js?b=0dc75376&v=morph2" : morph1 ? "./app.js?b=0dc75376&v=morph1" : motion3 ? "./app.js?b=0dc75376&v=motion3" : motion2 ? "./app.js?b=0dc75376&v=motion2" : motion1 ? "./app.js?b=0dc75376&v=motion1" : "./app.js?b=0dc75376&v=living10";
+  const src = minions ? "./app-minions.js?b=363cd1d5&v=minions" : road ? "./app-road.js?b=8c24aeb6&v=road" : morph3 ? "./app3.js?b=609021df&v=morph3" : morph2 ? "./app.js?b=0dc75376&v=morph2" : morph1 ? "./app.js?b=0dc75376&v=morph1" : motion3 ? "./app.js?b=0dc75376&v=motion3" : motion2 ? "./app.js?b=0dc75376&v=motion2" : motion1 ? "./app.js?b=0dc75376&v=motion1" : "./app.js?b=0dc75376&v=living10";
   const s = document.createElement("script");
   s.type = "module";
   s.src = src;
