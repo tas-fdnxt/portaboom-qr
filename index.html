@@ -75,6 +75,11 @@ body.morph1{--m1q:min(90vw, calc(100vh - 200px));--m1q:min(90vw, calc(100dvh - 2
 #morph1Still,#morph1Scan,#morph1ScanFx{display:none}
 body.morph1 #morph1Still{display:block;position:fixed;left:50%;top:50vh;top:50dvh;width:var(--m1q);height:var(--m1q);transform:translate(-50%,-50%);z-index:1;pointer-events:none}
 body.morph1.morph1-live #morph1Still{display:none}
+/* morph1: one surface. Nothing else may paint over the canvas (the still is removed from the DOM on hand-over). */
+body.morph1 .vig,body.morph1 #hud,body.morph1 #status,body.morph1 #aspect,body.morph1 #motionHint{display:none !important}
+#morph1Video{display:none}
+body.morph1.morph1-fallback canvas#stage{visibility:hidden}
+body.morph1.morph1-playing #morph1Video{display:block;position:fixed;left:0;top:0;width:100%;height:100vh;height:100dvh;object-fit:cover;background:#f4efe6;z-index:2}
 body.morph1 #morph1Scan{display:inline-flex;align-items:center;justify-content:center;gap:10px;position:fixed;left:50%;top:calc(50vh + var(--m1q) / 2 + 22px);top:calc(50dvh + var(--m1q) / 2 + 22px);transform:translateX(-50%);z-index:4;min-width:220px;min-height:60px;padding:0 34px;border:0;border-radius:999px;background:#EE7202;color:#fff;font:700 19px/1 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;letter-spacing:.02em;box-shadow:0 6px 18px rgba(238,114,2,.35),0 2px 4px rgba(27,42,74,.18);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 body.morph1 #morph1Scan svg{width:24px;height:24px;flex:none}
 body.morph1 #morph1Scan:focus-visible{outline:3px solid #1B2A4A;outline-offset:3px}
@@ -96,9 +101,10 @@ body.morph1.morph1-scanning #morph1ScanFx{display:block}
 </style>
 </head>
 <body class="live-scan">
-<img id="morph1Still" src="./portaboom-morph-qr.png" alt="" aria-hidden="true">
+<img id="morph1Still" src="./portaboom-morph-qr.png?b=389bfc9f" alt="" aria-hidden="true">
 <button id="morph1Scan" type="button" aria-label="Tap to scan the PORTABOOM QR code"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3M6 12h12"/></svg><span>Tap to scan</span></button>
 <div id="morph1ScanFx" aria-hidden="true"><i class="br tl"></i><i class="br tr"></i><i class="br bl"></i><i class="br brr"></i><i class="glow"></i><i class="line"></i></div>
+<video id="morph1Video" muted playsinline webkit-playsinline preload="none" aria-label="PORTABOOM PB4000 stands up out of the QR"></video>
 <canvas id="stage" aria-label="PORTABOOM PB4000 QR"></canvas>
 <div class="vig" aria-hidden="true"></div>
 <div id="status">Living QR · tap to scan the field</div>
@@ -107,7 +113,7 @@ body.morph1.morph1-scanning #morph1ScanFx{display:block}
   <div class="row">
     <div class="badge" id="modeBadge">Living QR</div>
     <a class="brand" href="https://www.trafficaccess.com.au/portaboom-product/portaboom-pb4000-series/" target="_blank" rel="noopener">
-      <img src="./portaboom_logo.png" alt="PORTABOOM"><span>PB4000</span>
+      <img src="./portaboom_logo.png?b=389bfc9f" alt="PORTABOOM"><span>PB4000</span>
     </a>
   </div>
   <div class="dock" id="liveDock">
@@ -158,12 +164,58 @@ body.morph1.morph1-scanning #morph1ScanFx{display:block}
     document.body.classList.add("morph1");
     // A press before the 3D scene is up is remembered; app.js starts the scan when ready.
     const btn = document.getElementById("morph1Scan");
-    if (btn) btn.addEventListener("click", () => { window.__morph1ScanQueued = true; });
+    if (btn) btn.addEventListener("click", () => { window.__morph1ScanQueued = true; btn.classList.add("pressed"); });
+    // Fallback: no WebGL, lost context, no GLB or app.js never started. Play the
+    // recorded morph (same framing: QR square centred, button below) in place,
+    // then leave to DEST. The reason is logged and kept in window.__morph1FallbackReason.
+    let fallen = false;
+    let played = false;
+    const leave = () => {
+      import("./dest-config.mjs?b=389bfc9f").then((m) => {
+        const dest = m.resolveLeaveDest(q.get("dest"));
+        if (typeof window.__iqrOnLeaveToDest === "function") window.__iqrOnLeaveToDest({ dest, reason: "fallback-video" });
+        else location.assign(dest);
+      }).catch(() => location.assign("https://www.trafficaccess.com.au/portaboom-product/portaboom-pb4000-series/"));
+    };
+    window.__morph1Play = () => {
+      if (played) return;
+      played = true;
+      const v = document.getElementById("morph1Video");
+      document.getElementById("morph1Still")?.remove();
+      if (btn) btn.style.display = "none";
+      document.body.classList.add("morph1-playing");
+      v.addEventListener("ended", leave, { once: true });
+      v.addEventListener("error", () => { console.warn("morph1 fallback video error"); leave(); }, { once: true });
+      const start = () => { try { v.currentTime = 1.5; } catch (e) { /* seek later */ } v.play().catch((e) => console.warn("morph1 fallback video play:", e && e.message)); };
+      if (v.readyState >= 1) start();
+      else {
+        v.addEventListener("loadedmetadata", start, { once: true });
+        if (v.networkState === 0) v.load();
+      }
+    };
+    window.__morph1Fallback = (reason) => {
+      if (fallen) return;
+      fallen = true;
+      window.__morph1FallbackReason = String(reason);
+      console.warn("morph1 fallback:", reason);
+      document.body.classList.add("morph1-fallback");
+      const v = document.getElementById("morph1Video");
+      v.src = "./morph1.mp4?b=389bfc9f";
+      v.preload = "auto";
+      if (btn) btn.addEventListener("click", () => window.__morph1Play());
+      document.getElementById("morph1Still")?.addEventListener("click", () => window.__morph1Play());
+      if (window.__morph1ScanQueued || q.get("autoplay") === "1") window.__morph1Play();
+    };
+    // app.js must start; a module that fails to load or link never sets __iqrBooted.
+    setTimeout(() => { if (!window.__iqrBooted) window.__morph1Fallback("app-not-started"); }, 15000);
+    // Back from DEST via bfcache: start clean instead of resuming a finished run.
+    addEventListener("pageshow", (e) => { if (e.persisted) location.reload(); });
   }
-  const src = morph1 ? "./app.js?v=morph1" : motion3 ? "./app.js?v=motion3" : motion2 ? "./app.js?v=motion2" : motion1 ? "./app.js?v=motion1" : "./app.js?v=living10";
+  const src = morph1 ? "./app.js?b=389bfc9f&v=morph1" : motion3 ? "./app.js?b=389bfc9f&v=motion3" : motion2 ? "./app.js?b=389bfc9f&v=motion2" : motion1 ? "./app.js?b=389bfc9f&v=motion1" : "./app.js?b=389bfc9f&v=living10";
   const s = document.createElement("script");
   s.type = "module";
   s.src = src;
+  if (morph1) s.onerror = () => window.__morph1Fallback && window.__morph1Fallback("app-load-error");
   document.body.appendChild(s);
 })();
 </script>

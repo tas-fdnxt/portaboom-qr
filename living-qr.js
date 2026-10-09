@@ -7,7 +7,7 @@
  * wordmark, face LEDs). Tiny ones do NOT grow traffic lights or boom arms.
  * living8/9 instanced-orange footer strips are rejected.
  */
-import { classifyModule, vocabFor, QUIET } from "./qr-encode.js";
+import { classifyModule, vocabFor, QUIET } from "./qr-encode.js?b=389bfc9f";
 
 export const CELL = 0.068;
 export const MODULE_FILL = 0.96;

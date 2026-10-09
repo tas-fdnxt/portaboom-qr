@@ -2,15 +2,15 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-import { DEST, ECC, encodeDestMatrix, downloadPrintPng } from "./qr-encode.js";
-import { buildLivingQr } from "./living-qr.js";
-import { encodeTipMatrix, unpackMask, MORPH_PALETTE } from "./qr-url.js";
-import { MORPH_MASK } from "./morph-mask.js";
+import { DEST, ECC, encodeDestMatrix, downloadPrintPng } from "./qr-encode.js?b=389bfc9f";
+import { buildLivingQr } from "./living-qr.js?b=389bfc9f";
+import { encodeTipMatrix, unpackMask, MORPH_PALETTE } from "./qr-url.js?b=389bfc9f";
+import { MORPH_MASK } from "./morph-mask.js?b=389bfc9f";
 import {
   SHOWTIME_DEST_DEFAULT,
   parseHttpUrl,
   resolveLeaveDest,
-} from "./dest-config.mjs";
+} from "./dest-config.mjs?b=389bfc9f";
 
 const NAVY = 0x1b2a4a;
 const ORANGE = 0xee7202;
@@ -688,12 +688,21 @@ try {
     preserveDrawingBuffer: true,
   });
 } catch (err) {
-  failEl.classList.add("show");
+  if (morph1Wanted && typeof window.__morph1Fallback === "function") window.__morph1Fallback("webgl-create-failed: " + (err?.message || err));
+  else failEl.classList.add("show");
   throw err;
 }
 if (!renderer.getContext()) {
-  failEl.classList.add("show");
+  if (morph1Wanted && typeof window.__morph1Fallback === "function") window.__morph1Fallback("webgl-unavailable");
+  else failEl.classList.add("show");
   throw new Error("WebGL unavailable");
+}
+window.__iqrBooted = true;
+if (morph1Wanted) {
+  canvas.addEventListener("webglcontextlost", (ev) => {
+    ev.preventDefault();
+    morph1Fallback("webgl-context-lost");
+  });
 }
 
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
@@ -2768,7 +2777,7 @@ function addLogoDecal(root) {
   stale.forEach((o) => o.parent && o.parent.remove(o));
 
   const loader = new THREE.TextureLoader();
-  const src = "./door_decal.png";
+  const src = "./door_decal.png?b=389bfc9f";
   loader.load(src, (tex) => {
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
@@ -2833,7 +2842,7 @@ function addLogoDecal(root) {
     root.userData.logoLocalW = logoW;
     root.userData.logoWorldW = logoW * (root.scale?.x || 1);
   }, undefined, () => {
-    loader.load("./portaboom_logo.png", (tex) => {
+    loader.load("./portaboom_logo.png?b=389bfc9f", (tex) => {
       tex.colorSpace = THREE.SRGBColorSpace;
       const plate = new THREE.Mesh(
         new THREE.PlaneGeometry(0.26, 0.26 * 0.698),
@@ -3478,7 +3487,7 @@ function mountCad(gltf, label) {
   }
 }
 
-const NAMED = new URL("./pb4000_named.glb", import.meta.url).href;
+const NAMED = new URL("./pb4000_named.glb?b=389bfc9f", import.meta.url).href;
 
 function loadNamed(reason) {
   console.warn(reason);
@@ -3610,7 +3619,8 @@ resize();
 /** Minimum time the flat QR holds before it starts to rise. */
 const MORPH1_FLAT_MIN_S = 1.4;
 /** Longest wait for the GLB before rising with the stand-in unit. */
-const MORPH1_UNIT_WAIT_MAX_S = 10;
+/** Real GLB must arrive by then; otherwise (or on a load error) play the recorded morph instead. */
+const MORPH1_UNIT_WAIT_MAX_S = 25;
 /*
  * Rise timeline (seconds from the end of the flat hold):
  *  0.05-3.25 the unit hinges up on its bottom-back edge (3.2 s, ease in-out)
@@ -3808,6 +3818,8 @@ function morph1Init() {
   const scanBtn = document.getElementById("morph1Scan");
   if (scanBtn) scanBtn.addEventListener("click", () => morph1Tap());
   if (window.__morph1ScanQueued) morph1.scanQueued = true;
+  // The page already switched to the recorded morph (app.js arrived too late): stay out of its way.
+  if (window.__morph1FallbackReason) morph1.phase = "fallback";
   addEventListener("resize", morph1Resize);
   if (window.visualViewport) window.visualViewport.addEventListener("resize", morph1Resize);
   morph1Resize();
@@ -4494,12 +4506,42 @@ function morph1FinishRise() {
 
 /** Button or a tap on the QR: run the simulated scan, then the morph. */
 function morph1Tap() {
+  if (morph1.phase === "fallback" && typeof window.__morph1Play === "function") {
+    window.__morph1Play();
+    return;
+  }
   if (morph1.phase !== "flat") return;
-  if (!(morph1.unitReady || morph1.unitFailed) || !morph1.restReady) {
+  if (!morph1.unitReady || !morph1.restReady || !morph1.handedOver) {
+    // Remembered: the scan runs on the first frame after the canvas takes over.
     morph1.scanQueued = true;
+    document.getElementById("morph1Scan")?.classList.add("pressed");
     return;
   }
   morph1BeginScan();
+}
+
+/**
+ * One surface: as soon as the canvas has drawn the QR with the real unit
+ * (identical to the still), the HTML still is removed from the DOM, so
+ * nothing flat can ever sit over the morph.
+ */
+function morph1HandOver() {
+  morph1.handedOver = true;
+  const still = document.getElementById("morph1Still");
+  if (still) still.remove();
+  document.body.classList.add("morph1-live");
+  morph1.marks.liveAt = performance.now() - morph1.bootAt;
+  window.__morph1Live = true;
+  console.info("morph1: canvas live, still removed");
+}
+
+/** No WebGL, lost context, or no GLB: play the recorded morph in the same place instead. */
+function morph1Fallback(reason) {
+  if (morph1.phase === "fallback") return;
+  morph1.phase = "fallback";
+  morph1.fallbackReason = reason;
+  if (typeof window.__morph1Fallback === "function") window.__morph1Fallback(reason);
+  else console.warn("morph1 fallback:", reason);
 }
 
 function morph1BeginScan() {
@@ -4632,20 +4674,23 @@ function morph1Contact(he) {
 
 function morph1Tick(dt, t) {
   if (!morph1Wanted) return;
+  if (morph1.phase === "fallback") return;
   const now = performance.now();
   if (morph1.phase === "flat") {
     morph1FlatFrame();
     const elapsed = (now - morph1.bootAt) / 1000;
-    const unitOk = morph1.unitReady || morph1.unitFailed || elapsed >= MORPH1_UNIT_WAIT_MAX_S;
+    // Only the real unit may stand in for the still; no stand-in morphs.
+    const unitOk = morph1.unitReady;
+    if (!unitOk && (morph1.unitFailed || elapsed >= MORPH1_UNIT_WAIT_MAX_S)) {
+      morph1Fallback(morph1.unitFailed ? "glb-load-failed" : "glb-timeout");
+      return;
+    }
     if (unitOk && !morph1.restReady && boom) {
       morph1CaptureRest();
       morph1Resize();
     }
-    // Hand over from the HTML still once the lying unit has rendered.
-    if (unitOk && morph1.restReady && (morph1.liveFrames = (morph1.liveFrames || 0) + 1) === 2) {
-      document.body.classList.add("morph1-live");
-    }
-    if (unitOk && morph1.restReady && !window.__morph1Freeze) {
+    // The scan (and with it the morph) only starts once the canvas has replaced the still.
+    if (unitOk && morph1.restReady && morph1.handedOver && !window.__morph1Freeze) {
       if (morph1.scanQueued) morph1BeginScan();
       else if (morph1Autoplay && elapsed >= MORPH1_FLAT_MIN_S) morph1BeginScan();
     }
@@ -4749,6 +4794,9 @@ function morph1Snapshot() {
     unitReady: morph1.unitReady,
     unitFailed: morph1.unitFailed,
     restReady: morph1.restReady,
+    handedOver: !!morph1.handedOver,
+    stillInDom: !!document.getElementById("morph1Still"),
+    fallbackReason: morph1.fallbackReason || null,
     unitScale: morph1.unitScale ?? null,
     usingGlb,
     showtimePhase,
@@ -4829,6 +4877,9 @@ function tick() {
   renderer.autoClear = true;
   renderer.setScissorTest(false);
   renderer.render(scene, camera);
+  if (morph1Wanted && !morph1.handedOver && morph1.phase === "flat" && morph1.unitReady && morph1.restReady && boom?.visible) {
+    morph1HandOver();
+  }
 }
 tick();
 
