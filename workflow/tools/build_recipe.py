@@ -189,7 +189,7 @@ edges[(B[-1], "r_boot")] = {"from": B[-1], "to": "r_boot", "group": "handoff", "
 for v, p in S.PATHS.items():
     for a, b in zip(p, p[1:]):
         edges.setdefault((a, b), {"from": a, "to": b, "group": "runtime", "versions": []})["versions"].append(v)
-recipe = {"title": "PORTABOOM QR morph recipe", "generated": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
+recipe = {"title": "PORTABOOM QR morph recipe", "code_commit_date": git("show", "-s", "--format=%cI", COMMIT),
           "repo": GH, "pages": PAGES, "code_commit": COMMIT, "code_commit_short": SHORT,
           "how_to_read": "BUILD nodes are how the assets were made (once, off the phone). RUNTIME nodes are what plays on the phone, in order. Each version is a path through the shared RUNTIME nodes plus its own. Every code reference is a GitHub link pinned to the commit the line numbers were read from. Keys are paths in morph-config.json (morph3 and later only).",
           "lineage": {"app.js": "morph1 + morph2 (hard-coded)", **{k: f"copy of {v}" for k, v in FILE_PARENT.items()}},

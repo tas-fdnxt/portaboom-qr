@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PORTABOOM QR - recipe map</title>
+<link rel="stylesheet" href="vendor/xyflow-react.css">
+<style>
+  :root { --navy:#13294b; --orange:#f26a1b; --grey:#5b6573; --line:#d9dee5; --bg:#f6f7f9; }
+  * { box-sizing:border-box; }
+  html,body,#root { margin:0; height:100%; font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; color:#1c2430; background:var(--bg); }
+  .app { display:grid; grid-template-rows:auto 1fr; height:100%; }
+  header { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:10px 14px; background:var(--navy); color:#fff; }
+  header h1 { font-size:16px; margin:0 12px 0 0; font-weight:650; }
+  header .pills { display:flex; flex-wrap:wrap; gap:6px; }
+  header button { border:1px solid #ffffff55; background:transparent; color:#fff; border-radius:14px; padding:3px 10px; cursor:pointer; font-size:13px; }
+  header button.on { background:var(--orange); border-color:var(--orange); }
+  header .sep { width:1px; height:22px; background:#ffffff44; margin:0 4px; }
+  header a { color:#ffd9c2; font-size:12px; margin-left:auto; }
+  main { display:grid; grid-template-columns:minmax(360px,1fr) minmax(380px,560px); min-height:0; }
+  .flow { min-height:0; border-right:1px solid var(--line); background:#fff; }
+  aside { overflow:auto; padding:14px 18px 40px; }
+  aside h2 { font-size:18px; margin:0 0 4px; }
+  aside h3 { font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--grey); margin:18px 0 6px; }
+  .badge { display:inline-block; font-size:11px; padding:1px 8px; border-radius:10px; background:#e7ebf1; color:var(--navy); margin-right:6px; }
+  .badge.own { background:#fde3d3; color:#a2420a; }
+  .note { background:#fff4ec; border-left:3px solid var(--orange); padding:8px 10px; margin:8px 0; }
+  .muted { color:var(--grey); font-size:12px; }
+  ul { padding-left:18px; margin:4px 0; }
+  li { margin:3px 0; }
+  table { border-collapse:collapse; width:100%; font-size:12.5px; }
+  td,th { border-top:1px solid var(--line); padding:5px 4px; vertical-align:top; text-align:left; }
+  th { color:var(--grey); font-weight:600; }
+  code { font:12px ui-monospace,SFMono-Regular,Menlo,monospace; background:#eef1f5; padding:0 3px; border-radius:3px; word-break:break-all; }
+  a { color:#0b5cad; }
+  .steps li { cursor:pointer; }
+  .steps li:hover { text-decoration:underline; }
+  .vlink { cursor:pointer; color:#0b5cad; }
+  .rf-node { width:250px; text-align:left; }
+  .rf-node .n { font-size:11px; color:var(--grey); }
+  .rf-node .t { font-weight:600; font-size:13px; }
+  .rf-node .s { font-size:11px; color:var(--grey); font-family:ui-monospace,Menlo,monospace; margin-top:2px; }
+  .legend { position:absolute; left:10px; top:10px; z-index:5; background:#fffffff0; border:1px solid var(--line); border-radius:6px; padding:6px 9px; font-size:12px; }
+  .legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin:0 4px 0 8px; vertical-align:-1px; }
+  @media (max-width:900px){ main{ grid-template-columns:1fr; grid-template-rows:55vh auto; } .flow{border-right:0;border-bottom:1px solid var(--line);} }
+</style>
+</head>
+<body>
+<div id="root">Loading recipe.json ...</div>
+<script src="vendor/react.production.min.js"></script>
+<script src="vendor/react-dom.production.min.js"></script>
+<script>
+  // @xyflow/react's UMD build expects a global jsxRuntime; map it onto React.createElement.
+  (function(){ function jsx(t,p,k){ return React.createElement(t, k===undefined ? p : Object.assign({}, p, {key:k})); }
+    window.jsxRuntime = { jsx: jsx, jsxs: jsx, Fragment: React.Fragment }; })();
+</script>
+<script src="vendor/xyflow-react.umd.js"></script>
+<script>
+(function(){
+const h = React.createElement, F = React.Fragment;
+const { ReactFlow, Background, Controls, MarkerType } = window.ReactFlow;
+const ORDER = ['morph1','morph2','morph3','road','minions','minions2','night','blueprint','rain','domino','domino2','drone'];
+
+function readHash(){ const o={}; location.hash.replace(/^#/,'').split('&').forEach(p=>{ const [k,v]=p.split('='); if(k) o[k]=decodeURIComponent(v||''); }); return o; }
+function writeHash(s){ const p=[]; if(s.view==='build') p.push('view=build'); else p.push('v='+s.v); if(s.n) p.push('n='+s.n); history.replaceState(null,'','#'+p.join('&')); }
+function ownTag(n,v){ const o=n.used_by.filter(u=>u!==v); return o.length ? 'version step, also in '+o.join(', ') : 'only in '+v; }
+function A(url, text){ return h('a',{href:url,target:'_blank',rel:'noopener'},text); }
+function codeRef(c,i){
+  if(!c.url) return h('li',{key:i}, h('code',null,c.symbol), ' ', h('span',{className:'muted'},'('+c.kind+')'), c.what ? ' - '+c.what : null);
+  const lines = c.start===c.end ? c.start : c.start+'-'+c.end;
+  return h('li',{key:i}, A(c.url, c.file+':'+lines), ' ', h('code',null,c.symbol),
+    c.status ? h('span',{className:'muted'},' ('+c.status+')') : null,
+    c.code ? h('div',null,h('code',null,c.code)) : null);
+}
+
+function App({R}){
+  const N = React.useMemo(()=>Object.fromEntries(R.nodes.map(n=>[n.id,n])),[R]);
+  const init = readHash();
+  const [state,setState] = React.useState({ v: R.versions[init.v] ? init.v : 'morph3', view: init.view==='build'?'build':'runtime', n: init.n || null });
+  React.useEffect(()=>writeHash(state),[state]);
+  const V = R.versions[state.v];
+  const set = (o)=>setState(s=>Object.assign({},s,o));
+
+  const graph = React.useMemo(()=>{
+    let ids, edges;
+    if(state.view==='build'){
+      ids = R.nodes.filter(n=>n.group==='build').map(n=>n.id);
+      edges = R.edges.filter(e=>e.group==='build');
+    } else {
+      ids = V.path;
+      const inPath = new Set(ids);
+      edges = R.edges.filter(e=>e.group!=='build' && e.versions.includes(state.v) && inPath.has(e.from) && inPath.has(e.to));
+      if(!edges.length) edges = ids.slice(1).map((id,i)=>({from:ids[i],to:id}));
+    }
+    const nodes = ids.map((id,i)=>{
+      const n = N[id];
+      const own = state.view==='runtime' && !id.startsWith('r_');
+      const step = state.view==='runtime' ? V.steps.find(s=>s.node===id) : null;
+      const first = step && step.code && step.code[0] ? step.code[0].symbol : (n.code && n.code[0] ? n.code[0].symbol : '');
+      const sel = state.n===id;
+      return { id, position:{ x: own ? 300 : 0, y: i*110 },
+        data:{ label: h('div',{className:'rf-node'}, h('div',{className:'n'}, (i+1)+(own?'  · '+ownTag(n,state.v):'')), h('div',{className:'t'}, n.label), first ? h('div',{className:'s'}, first) : null) },
+        style:{ width:270, borderRadius:8, border:(sel?'3px':'1.5px')+' solid '+(own?'#f26a1b':'#13294b'), background: own?'#fff4ec':'#fff', padding:8 },
+        sourcePosition:'bottom', targetPosition:'top' };
+    });
+    const rfEdges = edges.map((e,i)=>({ id:'e'+i, source:e.from, target:e.to, type:'smoothstep', markerEnd:{type:MarkerType.ArrowClosed}, style:{stroke:'#8792a2'} }));
+    return { nodes, edges: rfEdges };
+  },[state.v,state.view,state.n,R]);
+
+  const header = h('header',null,
+    h('h1',null,'PORTABOOM QR recipe'),
+    h('div',{className:'pills'}, ORDER.filter(v=>R.versions[v]).map(v=>h('button',{key:v,className:(state.view==='runtime'&&state.v===v)?'on':'',onClick:()=>set({v,view:'runtime',n:null})},v))),
+    h('span',{className:'sep'}),
+    h('button',{className:state.view==='build'?'on':'',onClick:()=>set({view:'build',n:null})},'how the assets were built'),
+    A(R.repo+'/tree/'+R.code_commit, 'code @ '+R.code_commit_short));
+
+  const flow = h('div',{className:'flow',style:{position:'relative'}},
+    h('div',{className:'legend'}, h('i',{style:{background:'#13294b'}}),'shared step', state.view==='runtime'? h(F,null,h('i',{style:{background:'#f26a1b'}}),'added by this version (not in morph3)'):null),
+    h(ReactFlow,{ key:state.view+state.v, nodes:graph.nodes, edges:graph.edges, fitView:true, fitViewOptions:{padding:0.15}, nodesDraggable:true, nodesConnectable:false, minZoom:0.2,
+      onNodeClick:(e,node)=>set({n:node.id}), onPaneClick:()=>set({n:null}), proOptions:{hideAttribution:false} },
+      h(Background,{gap:18,color:'#e6e9ee'}), h(Controls,{showInteractive:false})));
+
+  return h('div',{className:'app'}, header, h('main',null, flow, h('aside',null, state.n ? h(NodePanel,{R,N,id:state.n,state,set}) : (state.view==='build' ? h(BuildPanel,{R,N,set}) : h(VersionPanel,{R,N,V,v:state.v,set})))));
+}
+
+function VersionPanel({R,N,V,v,set}){
+  return h(F,null,
+    h('h2',null,V.label),
+    h('div',null, A(V.live,'open live'), ' · ', A(V.file_url, V.file+' ('+V.file_lines+' lines)'), (V.extra_files||[]).length ? h('span',null,' + ', V.extra_files.map((f,i)=>h(F,{key:f}, i?', ':'', A(R.repo+'/blob/'+R.code_commit+'/'+f, f)))) : null),
+    h('p',null,V.summary),
+    V.parent ? h('div',{className:'note'}, 'Built from ', h('span',{className:'vlink',onClick:()=>set({v:V.parent,n:null})},V.parent), ': ', V.file, ' is a full copy of ', V.parent_file, '. A fix to a shared step has to be repeated in each app file; the line numbers per file are in each step.') : null,
+    V.config ? h('div',{className:'muted'}, 'Settings: morph-config.json sections ', (V.config_sections||[]).map(s=>h('code',{key:s,style:{marginRight:4}},s)), '. Edit live with editor.html.')
+             : h('div',{className:'note'}, v+' does not read morph-config.json; its timings are constants in ', V.file, '.'),
+    h('h3',null,'Steps (click one)'),
+    h('ol',{className:'steps'}, V.path.map(id=>{ const st=V.steps.find(s=>s.node===id)||{}; return h('li',{key:id,onClick:()=>set({n:id})}, h('b',null,N[id].label), !id.startsWith('r_')?h('span',{className:'badge own',style:{marginLeft:6}},ownTag(N[id],v)):null, st.note? h('div',{className:'muted'},st.note):null); })),
+    V.functions_new_vs_parent_file && V.functions_new_vs_parent_file.length ? h(F,null,h('h3',null,'Functions new vs '+V.parent_file+' ('+V.functions_new_vs_parent_file.length+')'), h('div',null,V.functions_new_vs_parent_file.map(f=>h('code',{key:f,style:{marginRight:4}},f)))) : null,
+    V.functions_changed_vs_parent_file && V.functions_changed_vs_parent_file.length ? h(F,null,h('h3',null,'Functions changed vs '+V.parent_file+' ('+V.functions_changed_vs_parent_file.length+')'), h('div',null,V.functions_changed_vs_parent_file.map(f=>h('code',{key:f,style:{marginRight:4}},f)))) : null,
+    h('h3',null,'History'),
+    h('ul',null,(V.history||[]).map(c=>h('li',{key:c.commit}, A(c.url,c.commit),' ',h('span',{className:'muted'},c.date.slice(0,16).replace('T',' ')),' ',c.subject))),
+    h('h3',null,'How to read this'), h('p',{className:'muted'},R.how_to_read));
+}
+
+function BuildPanel({R,N,set}){
+  return h(F,null, h('h2',null,'How the assets were built'),
+    h('p',null,'These steps ran once, off the phone, before a version went live. Tools marked "not in this public repo" are the private build scripts; their outputs (the baked grid, the mp4 fallbacks, the stills) are in this repo.'),
+    h('ol',{className:'steps'}, R.nodes.filter(n=>n.group==='build').map(n=>h('li',{key:n.id,onClick:()=>set({n:n.id})}, h('b',null,n.label), h('div',{className:'muted'},n.versions_note||'')))));
+}
+
+function NodePanel({R,N,id,state,set}){
+  const n = N[id]; const v = state.v; const V = R.versions[v];
+  const runtime = n.group!=='build';
+  const step = runtime ? (V.steps.find(s=>s.node===id)||null) : null;
+  const code = runtime ? (step ? step.code : ((n.code_by_version||{})[v]||[])) : (n.code||[]);
+  const files = new Set([V.file].concat(V.extra_files||[]));
+  const keys = (runtime && step ? step.keys : n.keys) || [];
+  const override = runtime ? ((step && step.note) || (n.overrides||{})[v]) : null;
+  return h(F,null,
+    h('div',{className:'muted',style:{cursor:'pointer'},onClick:()=>set({n:null})},'← back to '+(runtime?V.label:'build overview')),
+    h('h2',null,n.label),
+    h('div',null, h('span',{className:'badge'+(runtime&&!id.startsWith('r_')?' own':'')}, runtime ? (!id.startsWith('r_')?ownTag(n,v):'shared runtime step (morph3 spine)') : 'build step'), h('code',null,n.id)),
+    h('p',null,n.purpose),
+    override ? h('div',{className:'note'}, h('b',null,'In '+v+': '), override) : null,
+    n.versions_note ? h('div',{className:'muted'},n.versions_note) : null,
+    h('h3',null, runtime ? 'Code in '+v+' (@ '+R.code_commit_short+')' : 'Code (@ '+R.code_commit_short+')'),
+    code.length ? h('ul',null,code.map(codeRef)) : h('div',{className:'muted'},'No code reference for this version.'),
+    h('h3',null,'To change it'),
+    h('ul',null,(n.change||[]).map((c,i)=>h('li',{key:i},c))),
+    keys.length ? h(F,null, h('h3',null,'Settings in morph-config.json'),
+      runtime && !V.config ? h('div',{className:'note'}, v+' ignores morph-config.json; these keys apply from morph3 on.') : null,
+      h('table',null, h('thead',null,h('tr',null,h('th',null,'key'),h('th',null,'value'),h('th',null,'editor range'),h('th',null,'what it does / read at'))),
+        h('tbody',null, keys.map(k=>{ const K=R.keys[k]||{}; const reads=(K.read_at||[]).filter(r=>!runtime||files.has(r.file));
+          return h('tr',{key:k}, h('td',null,h('code',null,k)), h('td',null,h('code',null,JSON.stringify(K.value))), h('td',null,K.editor_range? h('code',null,JSON.stringify(K.editor_range)) : (R.code_only_keys[k]?'code only':'-')),
+            h('td',null, K.what||'', reads.length? h('div',{className:'muted'}, 'read at ', reads.slice(0,6).map((r,i)=>h(F,{key:i}, i?', ':'', A(r.url, r.file+':'+r.line)))) : null)); })))) : null,
+    runtime ? h(F,null, h('h3',null,'Versions with this step'),
+      h('div',null, n.used_by.map(u=>h('button',{key:u,onClick:()=>set({v:u}),style:{margin:'0 4px 4px 0',border:'1px solid #c9d0da',background:u===v?'#13294b':'#fff',color:u===v?'#fff':'#13294b',borderRadius:12,padding:'2px 9px',cursor:'pointer'}},u))),
+      h('div',{className:'muted',style:{marginTop:6}},'Click a version to see the same step\'s code lines in that file.')) : null);
+}
+
+fetch('recipe.json').then(r=>r.json()).then(R=>{
+  ReactDOM.createRoot(document.getElementById('root')).render(h(App,{R}));
+}).catch(e=>{ document.getElementById('root').textContent='Could not load recipe.json: '+e; });
+})();
+</script>
+</body>
+</html>
