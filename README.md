@@ -10,3 +10,5 @@ Scan the PORTABOOM QR code with a phone camera. The code shows the PORTABOOM PB4
 Files: `index.html` (loader), `app.js` (scene and timeline), `morph2-art.js` + `morph2-art-grid.js` (the module drawing of the unit), `living-qr.js` (QR field), `qr-url.js` + `qr-vendor.js` (QR encoder, MIT, qrcode-generator by Kazuhiko Arase), `morph-mask.js` (QR cells under the lying unit), `qr-encode.js`, `dest-config.mjs`, `pb4000_named.glb` (PB4000 model), `morph2.mp4` / `morph1.mp4` (fallback videos when 3D is unavailable), logo images.
 
 PORTABOOM is a registered trade mark. QR Code is a registered trade mark of DENSO WAVE INCORPORATED.
+
+Alternative cut for comparison: https://tas-fdnxt.github.io/portaboom-qr/?v=morph3 starts from the same QR and scan, grows the code to fill the screen, builds the unit with a light wave that turns the blocks into the real PB4000, and frames the whole unit with more of the boom in shot after a slow camera glide (`app3.js`, fallback video `morph3.mp4`). Its timings, camera and colours are in `morph-config.json`; edit them in https://tas-fdnxt.github.io/portaboom-qr/editor.html (see `EDITING.md`).
