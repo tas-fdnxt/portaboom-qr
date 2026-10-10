@@ -1,0 +1,606 @@
+{
+ "title": "PORTABOOM QR - key turns (2026-10-08 to 2026-10-10, AEDT)",
+ "fork": {
+  "node": "T26",
+  "from": "T25",
+  "note": "QR-as-a-product branch spins off after the recipe viewer"
+ },
+ "turns": [
+  {
+   "id": "T00",
+   "when_aedt": "2026-09-06..09-08",
+   "track": "A0",
+   "parent": null,
+   "kind": "predecessor",
+   "ask": "(earlier) Incredible QR / living QR doors for the PB4000",
+   "change": "Predecessor project (private repo, now archived): living1-10 ICQR doors, MOTION previews, Magic Tree send-still. Source of the GLB, STOP/stripe fixes and QR tooling.",
+   "commits": [],
+   "drive": [],
+   "outcome": "superseded (archived)"
+  },
+  {
+   "id": "T01",
+   "when_aedt": "2026-10-08 14:54",
+   "track": "A",
+   "parent": "T00",
+   "kind": "build",
+   "ask": "Diagnose PORTABOOM Incredible QR (Pages 404 + local bake); scan a static QR -> flat unit hinges upright, eye level, green/amber/red, boom drops, go to URL",
+   "change": "New public tip-only repo portaboom-qr (morph1) published on GitHub Pages",
+   "commits": [
+    {
+     "sha": "75150cb",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/75150cb"
+    }
+   ],
+   "drive": [],
+   "outcome": "delivered"
+  },
+  {
+   "id": "T02",
+   "when_aedt": "2026-10-08 14:57",
+   "track": "A",
+   "parent": "T01",
+   "kind": "build",
+   "ask": "Show something instantly on scan",
+   "change": "QR still shows instantly while WebGL loads, then hands over to the flat frame",
+   "commits": [
+    {
+     "sha": "71610d7",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/71610d7"
+    }
+   ],
+   "drive": [],
+   "outcome": "fixed"
+  },
+  {
+   "id": "T03",
+   "when_aedt": "2026-10-08 15:33",
+   "track": "A",
+   "parent": "T02",
+   "kind": "build",
+   "ask": "Unit lying flat inside the QR, traffic-light lenses up, hinge gradually upright",
+   "change": "Unit starts on its back, lenses up, hinges upright over 3.2 s while the field rises",
+   "commits": [
+    {
+     "sha": "24c8696",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/24c8696"
+    }
+   ],
+   "drive": [],
+   "outcome": "fixed"
+  },
+  {
+   "id": "T04",
+   "when_aedt": "2026-10-08 16:17",
+   "track": "A",
+   "parent": "T03",
+   "kind": "build",
+   "ask": "No logo on the QR; large lying unit (25-30%); Tap to scan below the QR",
+   "change": "Still = PB4000 lying on the QR, tap-to-scan sweep + haptics, eye-level finish",
+   "commits": [
+    {
+     "sha": "e3a1b12",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/e3a1b12"
+    }
+   ],
+   "drive": [],
+   "outcome": "fixed"
+  },
+  {
+   "id": "T05",
+   "when_aedt": "2026-10-08 16:54",
+   "track": "A",
+   "parent": "T04",
+   "kind": "build",
+   "ask": "Camera ends at lens height, ~0 deg pitch, lenses head-on (<10 deg); no white glint",
+   "change": "Centred eye-level finish on tile floor with sky/horizon; no one-frame flash; contact shadow follows footprint",
+   "commits": [
+    {
+     "sha": "73141e7",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/73141e7"
+    },
+    {
+     "sha": "d87d9cc",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/d87d9cc"
+    },
+    {
+     "sha": "3709e8e",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/3709e8e"
+    }
+   ],
+   "drive": [],
+   "outcome": "fixed"
+  },
+  {
+   "id": "T06",
+   "when_aedt": "2026-10-08 20:02",
+   "track": "A",
+   "parent": "T05",
+   "kind": "build",
+   "ask": "Shift unit left so 70%+ of the lowered boom shows (4-6% margin); keep STOP visible",
+   "change": "Horizontal lens shift slides the unit left",
+   "commits": [
+    {
+     "sha": "0eca9f8",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/0eca9f8"
+    }
+   ],
+   "drive": [
+    "My Drive root morph1 copy (22:41; deleted later as a duplicate)"
+   ],
+   "outcome": "approved for morph1"
+  },
+  {
+   "id": "T07",
+   "when_aedt": "2026-10-09 15:31",
+   "track": "A",
+   "parent": "T06",
+   "kind": "build",
+   "ask": "No website screenshot at the end; one clean surface",
+   "change": "Remove still once canvas draws QR, scan after hand-over, inline video fallback, cache-busted assets",
+   "commits": [
+    {
+     "sha": "d915c5a",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/d915c5a"
+    }
+   ],
+   "drive": [
+    "PORTABOOM_QR/01_versions/01_morph1/morph1.mp4",
+    "PORTABOOM_QR/01_versions/01_morph1/morph1-contact-sheet.png"
+   ],
+   "outcome": "fixed"
+  },
+  {
+   "id": "T08",
+   "when_aedt": "2026-10-09 20:04",
+   "track": "A",
+   "parent": "T07",
+   "kind": "build",
+   "ask": "'True morph': pure QR with PORTABOOM drawn in module style; squares lift, fly, rearrange into a voxel PORTABOOM, resolve into the real GLB; longer scan",
+   "change": "morph2: GLB-derived v13 QR art, modules fly/assemble, resolve to real model, boom cycle. Root now runs morph2; morph1 kept at ?v=morph1",
+   "commits": [
+    {
+     "sha": "fbf3605",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/fbf3605"
+    }
+   ],
+   "drive": [
+    "PORTABOOM_QR/00_QR_codes/portaboom-morph2-qr.png/.svg (main printable QR)",
+    "PORTABOOM_QR/01_versions/02_morph2_main/*"
+   ],
+   "outcome": "approved: root/printed QR"
+  },
+  {
+   "id": "T09",
+   "when_aedt": "2026-10-09 21:53",
+   "track": "A",
+   "parent": "T08",
+   "kind": "build",
+   "ask": "Bigger centred unit (60-70% vh, lens stack 35-42% from top), QR fills screen, no cream gap; human-editable workflow (one config + editor + EDITING.md)",
+   "change": "morph3 cut (?v=morph3) + morph-config.json + editor.html + EDITING.md",
+   "commits": [
+    {
+     "sha": "1eca1bb",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/1eca1bb"
+    }
+   ],
+   "drive": [
+    "PORTABOOM_QR/01_versions/03_morph3/*",
+    "PORTABOOM_QR/00_QR_codes/morph3-plain-qr.png"
+   ],
+   "outcome": "delivered"
+  },
+  {
+   "id": "T10",
+   "when_aedt": "2026-10-09 22:31",
+   "track": "A",
+   "parent": "T09",
+   "kind": "build",
+   "ask": "Auto-start for real users after a brief hold; Tap to scan only with ?test=1",
+   "change": "0.8 s hold then auto scan+morph; ?test=1 restores button; autoplay=1 alias; scan.auto_start_delay_s",
+   "commits": [
+    {
+     "sha": "b55f87e",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/b55f87e"
+    }
+   ],
+   "drive": [],
+   "outcome": "approved"
+  },
+  {
+   "id": "T11",
+   "when_aedt": "2026-10-09 23:06",
+   "track": "A",
+   "parent": "T10",
+   "kind": "ops",
+   "ask": "'I don't want you saving anything on your computer' - deliverables to Drive/GitHub; recover Worksite Simulator for mobile",
+   "change": "Drive PORTABOOM_QR tree (00-06) + Index doc; recovered Worksite Simulator build kept in a private repo (built output only); worksite findings doc",
+   "commits": [],
+   "drive": [
+    "PORTABOOM_QR/",
+    "PORTABOOM_QR/00_INDEX (rewritten)",
+    "PORTABOOM_QR/04_worksite_sim/*"
+   ],
+   "outcome": "delivered; mobile rebuild waiting on M5 source"
+  },
+  {
+   "id": "T12",
+   "when_aedt": "2026-10-09 23:21",
+   "track": "A",
+   "parent": "T10",
+   "kind": "build",
+   "ask": "Worksite road scene behind the morph (?v=road): road, kerbs, cones, signs, 3-5 queued cars, 2-3 hi-vis controllers",
+   "change": "road mode: procedural worksite built outward from the unit; road section in config/editor; road.mp4",
+   "commits": [
+    {
+     "sha": "43c1729",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/43c1729"
+    }
+   ],
+   "drive": [
+    "PORTABOOM_QR/90_archive/road_v1/road.mp4",
+    "PORTABOOM_QR/90_archive/road_v1/road-contact-sheet.png"
+   ],
+   "outcome": "REJECTED: cars going the wrong way"
+  },
+  {
+   "id": "T13",
+   "when_aedt": "2026-10-10 00:51",
+   "track": "A",
+   "parent": "T10",
+   "kind": "build",
+   "ask": "?v=minions: after QR fills screen, many little PORTABOOMs pop up, cycle lights, raise/lower booms; hero forms among them",
+   "change": "minions checkpoint -> video -> crowd pops out of dark modules, ducks camera, lines up behind hero",
+   "commits": [
+    {
+     "sha": "d32c777",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/d32c777"
+    },
+    {
+     "sha": "ec3b577",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/ec3b577"
+    },
+    {
+     "sha": "3d27f39",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/3d27f39"
+    }
+   ],
+   "drive": [
+    "PORTABOOM_QR/01_versions/04_minions/minions.mp4 (9.5 MB current)",
+    "PORTABOOM_QR/90_archive/minions_checkpoint (deleted after approval)",
+    "PORTABOOM_QR/01_versions/04_minions/minions-contact-sheet.png x2"
+   ],
+   "outcome": "delivered"
+  },
+  {
+   "id": "T14",
+   "when_aedt": "2026-10-10 01:38",
+   "track": "A",
+   "parent": "T13",
+   "kind": "build",
+   "ask": "minions2: fill the entire visible floor horizon to front, small clear zone around hero",
+   "change": "220 minis cover the floor in a wave from the hero",
+   "commits": [
+    {
+     "sha": "42ffb75",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/42ffb75"
+    }
+   ],
+   "drive": [],
+   "outcome": "needed fix (minis overlapped hero wheels)"
+  },
+  {
+   "id": "T15",
+   "when_aedt": "2026-10-10 01:49",
+   "track": "A",
+   "parent": "T12",
+   "kind": "build",
+   "ask": "'You've got the cars going the wrong way' - approach from camera side, queue at lowered boom, drive away past unit on green",
+   "change": "road v2: traffic from camera side, stop line, boom down-wait-rise, new road.mp4",
+   "commits": [
+    {
+     "sha": "4180081",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/4180081"
+    }
+   ],
+   "drive": [
+    "PORTABOOM_QR/01_versions/06_road/road-v2.mp4",
+    "PORTABOOM_QR/01_versions/06_road/road-v2-contact-sheet.png"
+   ],
+   "outcome": "fixed"
+  },
+  {
+   "id": "T16",
+   "when_aedt": "2026-10-10 01:54",
+   "track": "A",
+   "parent": "T14",
+   "kind": "build",
+   "ask": "Keep the whole hero clear of foreground minis",
+   "change": "minions2 clear zone (head, cabinet, wheels, legs); minions2.mp4",
+   "commits": [
+    {
+     "sha": "91517b7",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/91517b7"
+    }
+   ],
+   "drive": [
+    "PORTABOOM_QR/01_versions/05_minions2/minions2.mp4",
+    "PORTABOOM_QR/01_versions/05_minions2/minions2-contact-sheet.png"
+   ],
+   "outcome": "fixed"
+  },
+  {
+   "id": "T17",
+   "when_aedt": "2026-10-10 ~02:10",
+   "track": "A",
+   "parent": "T10",
+   "kind": "fork",
+   "ask": "Approve five new versions: Night, Domino, Blueprint, Rain, Drone (built one at a time by two executors)",
+   "change": "Fork into two build lanes (lane 1: night/blueprint/rain; lane 2: domino/drone/domino2)",
+   "commits": [],
+   "drive": [],
+   "outcome": "approved"
+  },
+  {
+   "id": "T18",
+   "when_aedt": "2026-10-10 02:53",
+   "track": "A",
+   "parent": "T17",
+   "kind": "build",
+   "ask": "Domino: modules topple like dominoes and flip up as an aisle of little PORTABOOMs",
+   "change": "?v=domino",
+   "commits": [
+    {
+     "sha": "af85a3a",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/af85a3a"
+    }
+   ],
+   "drive": [
+    "PORTABOOM_QR/01_versions/08_domino/domino.mp4",
+    "PORTABOOM_QR/01_versions/08_domino/domino-contact-sheet.png"
+   ],
+   "outcome": "delivered"
+  },
+  {
+   "id": "T19",
+   "when_aedt": "2026-10-10 03:01",
+   "track": "A",
+   "parent": "T17",
+   "kind": "build",
+   "ask": "Night: glowing modules, wet road, light cycle washes the scene",
+   "change": "?v=night",
+   "commits": [
+    {
+     "sha": "2281859",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/2281859"
+    }
+   ],
+   "drive": [
+    "PORTABOOM_QR/01_versions/07_night/*"
+   ],
+   "outcome": "delivered"
+  },
+  {
+   "id": "T20",
+   "when_aedt": "2026-10-10 03:17",
+   "track": "A",
+   "parent": "T17",
+   "kind": "build",
+   "ask": "Drone: top-down worksite reveal tile by tile, bezier swoop to eye level",
+   "change": "?v=drone (drone-scene.js copy of road-scene.js)",
+   "commits": [
+    {
+     "sha": "ac84a01",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/ac84a01"
+    }
+   ],
+   "drive": [
+    "PORTABOOM_QR/01_versions/12_drone/*"
+   ],
+   "outcome": "delivered"
+  },
+  {
+   "id": "T21",
+   "when_aedt": "2026-10-10 03:30",
+   "track": "A",
+   "parent": "T17",
+   "kind": "build",
+   "ask": "Blueprint: QR inverts to blueprint sheet, wireframe stands up, unit scans in part by part",
+   "change": "?v=blueprint (+ blueprint-edges.bin)",
+   "commits": [
+    {
+     "sha": "4e7952a",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/4e7952a"
+    }
+   ],
+   "drive": [
+    "PORTABOOM_QR/01_versions/10_blueprint/*"
+   ],
+   "outcome": "delivered"
+  },
+  {
+   "id": "T22",
+   "when_aedt": "2026-10-10 03:33",
+   "track": "A",
+   "parent": "T18",
+   "kind": "build",
+   "ask": "domino2: domino topple but the crowd covers the whole floor like minions2",
+   "change": "?v=domino2",
+   "commits": [
+    {
+     "sha": "f299987",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/f299987"
+    }
+   ],
+   "drive": [
+    "PORTABOOM_QR/01_versions/09_domino2/domino2.mp4",
+    "PORTABOOM_QR/01_versions/09_domino2/domino2-contact-sheet.png"
+   ],
+   "outcome": "delivered"
+  },
+  {
+   "id": "T23",
+   "when_aedt": "2026-10-10 03:34",
+   "track": "A",
+   "parent": "T17",
+   "kind": "build",
+   "ask": "Rain: cubes rain down on ballistic paths and stack, dust puff on boom drop",
+   "change": "?v=rain",
+   "commits": [
+    {
+     "sha": "74ff5ac",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/74ff5ac"
+    }
+   ],
+   "drive": [
+    "PORTABOOM_QR/01_versions/11_rain/*"
+   ],
+   "outcome": "delivered"
+  },
+  {
+   "id": "T24",
+   "when_aedt": "2026-10-10 ~04:00",
+   "track": "A",
+   "parent": "T23",
+   "kind": "research",
+   "ask": "Look at what the Learning bot is doing (LangGraph + React Flow console)",
+   "change": "Read-only study of the Learning bot's LangGraph pipeline and console; proposed the QR build-as-graph pattern",
+   "commits": [],
+   "drive": [],
+   "outcome": "research only"
+  },
+  {
+   "id": "T25",
+   "when_aedt": "2026-10-10 04:38",
+   "track": "A",
+   "parent": "T24",
+   "kind": "build",
+   "ask": "'I want to know exactly what you did to create them... as a workflow, so I know exactly what areas change the code and the end product'",
+   "change": "workflow/: recipe.json (287 config keys traced), RECIPE.md, React Flow recipe viewer, LangGraph StateGraph per version, graph PNGs",
+   "commits": [
+    {
+     "sha": "5b4c5ad",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/5b4c5ad"
+    },
+    {
+     "sha": "6058568",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/6058568"
+    },
+    {
+     "sha": "b02b4d1",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/b02b4d1"
+    },
+    {
+     "sha": "5e3b31d",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/5e3b31d"
+    },
+    {
+     "sha": "3815da9",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/3815da9"
+    },
+    {
+     "sha": "efc75fd",
+     "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/efc75fd"
+    }
+   ],
+   "drive": [
+    "PORTABOOM_QR/02_workflow/PORTABOOM QR recipe (doc)",
+    "PORTABOOM_QR/02_workflow/graph_*.png (13 current)",
+    "(9 superseded graph PNGs, deleted after approval)",
+    "Drive bin: 3 old graph PNGs trashed without asking"
+   ],
+   "outcome": "delivered; trash slip owned"
+  },
+  {
+   "id": "T26",
+   "when_aedt": "2026-10-10 ~05:00-10:00",
+   "track": "B",
+   "parent": "T25",
+   "kind": "fork",
+   "ask": "Run through headline steps with flowcharts; thoughts on building this into a paid prompt-driven app",
+   "change": "8 headline steps with mermaid charts; product shape (prompt->settings, customer model, pricing); pre-reqs (single engine, sliders, safe model loading)",
+   "commits": [],
+   "drive": [],
+   "outcome": "agreed: product plan to follow"
+  },
+  {
+   "id": "T27",
+   "when_aedt": "2026-10-10 10:35",
+   "track": "B",
+   "parent": "T26",
+   "kind": "research",
+   "ask": "Open-source repos can make a 3D model from a photo or photos so we control it",
+   "change": "Photo-to-3D research: TRELLIS.2, Step1X-3D, TripoSR, Meshroom, Hunyuan3D licences/costs",
+   "commits": [],
+   "drive": [
+    "QR_PRODUCT/01_research/photo to 3D research (doc)"
+   ],
+   "outcome": "delivered"
+  },
+  {
+   "id": "T28",
+   "when_aedt": "2026-10-10 ~11:00",
+   "track": "B",
+   "parent": "T27",
+   "kind": "plan",
+   "ask": "Use my photo; don't cheat; TRELLIS.2, Step1X-3D, TripoSR (not Meshroom yet); give me a plan",
+   "change": "8-step test plan from Fabian's single photo",
+   "commits": [],
+   "drive": [],
+   "outcome": "plan given"
+  },
+  {
+   "id": "T29",
+   "when_aedt": "2026-10-10 ~11:20",
+   "track": "B",
+   "parent": "T28",
+   "kind": "preflight",
+   "ask": "'Go and check before you start so you can categorically tell me it will work'",
+   "change": "Preflight: TripoSR HF space live; TRELLIS.2 on fal live ($0.30); Step1X-3D not hosted anywhere; standing rule saved",
+   "commits": [],
+   "drive": [],
+   "outcome": "Step1X-3D parked"
+  },
+  {
+   "id": "T30",
+   "when_aedt": "2026-10-10 12:05",
+   "track": "B",
+   "parent": "T29",
+   "kind": "build",
+   "ask": "Gave the fal key - run it",
+   "change": "TRELLIS.2 x3 (fal) + TripoSR (HF Space after fal endpoint missing); normalise, render, scorecard (TRELLIS 32/45, TripoSR 11/45), cost US$0.95; phone viewer",
+   "commits": [],
+   "drive": [
+    "QR_PRODUCT/02_photo_to_3d_test/* (scorecard doc, GLBs x8, renders, prep)"
+   ],
+   "outcome": "delivered; correction owned (TripoSR fell back to public HF page)"
+  },
+  {
+   "id": "T31",
+   "when_aedt": "2026-10-10 ~12:40",
+   "track": "B",
+   "parent": "T30",
+   "kind": "design",
+   "ask": "Width too wide; must add real logos so it isn't AI slop - what improvement loop?",
+   "change": "Refinement loop design: generate -> fix proportions to real dims -> split parts -> clean -> apply real artwork -> check vs photo -> loop -> shrink -> approve",
+   "commits": [],
+   "drive": [],
+   "outcome": "design only; needs PB4000 dims + vector logo/STOP"
+  },
+  {
+   "id": "T32",
+   "when_aedt": "2026-10-10 14:20",
+   "track": "A+B",
+   "parent": "T31",
+   "kind": "ops",
+   "ask": "Build a LangGraph of every key turn; organise files: PORTABOOM QR vs QR-as-a-product; clean up",
+   "change": "Inventory, proposed structure and this turn graph; approved and executed: private tools and product repos, Drive split into PORTABOOM_QR and QR_PRODUCT, test viewer removed from public history",
+   "commits": [],
+   "drive": [
+    "PORTABOOM_QR/02_workflow/turn_graph",
+    "QR_PRODUCT/"
+   ],
+   "outcome": "approved and executed"
+  }
+ ]
+}

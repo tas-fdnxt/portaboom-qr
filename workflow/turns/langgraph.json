@@ -1,0 +1,8 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "qr_turns_all": "./studio_graph.py:all_turns",
+    "qr_turns_track_a": "./studio_graph.py:track_a",
+    "qr_turns_track_b": "./studio_graph.py:track_b"
+  }
+}
