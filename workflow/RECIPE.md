@@ -1,7 +1,7 @@
 # PORTABOOM QR: how each version is made
 
 Generated from the code at commit [`f299987`](https://github.com/tas-fdnxt/portaboom-qr/commit/f2999871290a523c022ea07e04693d982b3e8aa6) by `workflow/tools/build_recipe.py`. Every file and line below was read from that commit; re-run the script after a code change and the numbers update themselves.
-Interactive map: https://tas-fdnxt.github.io/portaboom-qr/workflow/  |  Machine-readable: `workflow/recipe.json`.
+Interactive map: https://portaboom-qr.vercel.app/workflow/  |  Machine-readable: `workflow/recipe.json`.
 
 ## Read this first
 
@@ -30,7 +30,7 @@ Lineage: `app.js` = morph1 + morph2 (hard-coded); `app3.js` = copy of app.js; `a
    - [`morph2-art-grid.js:8-8`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/morph2-art-grid.js#L8) version / row0 / col0 / mask
    - [`qr-url.js:13-42`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/qr-url.js#L13-L42) encodeUrlMatrix()
    - build tool (not in this public repo): `scripts/make-morph2-qr.mjs` (writes portaboom-morph2-qr.png/.svg from encodeMorph2 (18 px per module, cream paper, 4-module quiet zone))
-   - To change: To change where the printed QR sends people: the URL is the --url argument of make-morph2-qr.mjs (default https://tas-fdnxt.github.io/portaboom-qr/?v=morph2). The runtime draws its frame 0 from './?v=morph2' (MORPH1_TIP_URL), so if you print a different URL the page's frame 0 must be updated to match or frame 0 will not equal the still.
+   - To change: To change where the printed QR sends people: the URL is the --url argument of make-morph2-qr.mjs (default https://portaboom-qr.vercel.app/?v=morph2). The runtime draws its frame 0 from './?v=morph2' (MORPH1_TIP_URL), so if you print a different URL the page's frame 0 must be updated to match or frame 0 will not equal the still.
    - To change: Every version (morph3, road, minions...) draws this same morph2 code on frame 0; the ?v= in the link only picks which animation runs.
    - To change: Art colours for the print are ART_COLORS in morph2-art.js (cabinet orange #F28C28, lenses, boom red).
 3. **Decode check (gate).** Prove the art QR still scans: jsQR at native size and 1176 down to 200 px, then zxing-cpp and OpenCV at 1176 down to 240 px. Fails the build if any of the first 12 sizes misses. Receipt: morph2-qr-verify.json.
@@ -56,7 +56,7 @@ Lineage: `app.js` = morph1 + morph2 (hard-coded); `app3.js` = copy of app.js; `a
    - [`editor.html:206-206`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/editor.html#L206) slider ranges
    - [`editor.html:81-81`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/editor.html#L81) timeline markers
    - [`morph-config.json:4-4`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/morph-config.json#L4) the settings file
-   - To change: To change a version for everyone: edit the value in the editor, Download, replace morph-config.json, commit. It is live as soon as Pages redeploys (no build step).
+   - To change: To change a version for everyone: edit the value in the editor, Download, replace morph-config.json, commit. It is live as soon as Vercel redeploys (automatic on every push, no build step).
    - To change: morph1 and morph2 (the site root) ignore this file; their numbers are constants in app.js.
 7. **Fallback video render.** Deterministic render of the live page: a virtual clock in fixed 1/30 s steps, one canvas capture per step at 390x844 @2x (780x1688), 1.5 s flat hold first, then encoded to <version>.mp4. index.html plays it in place when WebGL, the GLB or app.js fails (15 s watchdog), then leaves to DEST.
    - [`index.html:234-234`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/index.html#L234) fallback picker (mp4 per version)
@@ -74,7 +74,7 @@ Lineage: `app.js` = morph1 + morph2 (hard-coded); `app3.js` = copy of app.js; `a
    - build tool (not in this public repo): `gitleaks` (detect on the stage and on git history)
    - build tool (not in this public repo): `rg sweep` (tailnet hosts, private IPs, tokens, private repo names)
    - To change: Keep build tools and receipts out of this repo; publish only what the page loads.
-10. **Publish to GitHub Pages.** Commit to main; GitHub Pages serves https://tas-fdnxt.github.io/portaboom-qr/. Every asset URL carries a ?b=<hash> cache-buster so phones get the new file, then the live URLs are checked for HTTP 200.
+10. **Publish (Vercel).** Commit to main; Vercel (linked to the private repo, auto-deploys on push) serves https://portaboom-qr.vercel.app/. Every asset URL carries a ?b=<hash> cache-buster so phones get the new file, then the live URLs are checked for HTTP 200.
    - [`index.html:252-252`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/index.html#L252) cache-busted app file per version
    - [`index.html:112-112`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/index.html#L112) cache-busted still
    - To change: When you change an app file, bump its ?b= value in index.html, or phones may keep the old copy.
@@ -85,7 +85,7 @@ Boot (pick version, load settings) -> frame 0 (still, canvas takes over) -> hold
 
 ## morph1 - the photo unit hinges up
 
-Live: https://tas-fdnxt.github.io/portaboom-qr/?v=morph1  |  File: [`app.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app.js) (6346 lines)  |  Fallback video: `morph1.mp4`  |  Settings: none (constants in app.js)
+Live: https://portaboom-qr.vercel.app/?v=morph1  |  File: [`app.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app.js) (6346 lines)  |  Fallback video: `morph1.mp4`  |  Settings: none (constants in app.js)
 
 The first cut. The QR still shows a rendered PB4000 lying on its back inside the code. After one scan sweep the real 3D unit hinges upright on its back edge while the QR modules ripple, the camera drops to eye level, then green, amber, red, boom down, DEST.
 
@@ -125,7 +125,7 @@ History: [75150cb](https://github.com/tas-fdnxt/portaboom-qr/commit/75150cb2c76e
 
 ## morph2 - modules fly into the unit (site root)
 
-Live: https://tas-fdnxt.github.io/portaboom-qr/?v=morph2  |  File: [`app.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app.js) (6346 lines)  |  Fallback video: `morph2.mp4`  |  Settings: none (constants in app.js)
+Live: https://portaboom-qr.vercel.app/?v=morph2  |  File: [`app.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app.js) (6346 lines)  |  Fallback video: `morph2.mp4`  |  Settings: none (constants in app.js)
 
 The default the printed QR opens. The unit is drawn in QR modules (no photo). After a double scan with finder lock the drawn modules lift off, fly and build a voxel PB4000, the real GLB resolves inside the cubes, then the light and boom cycle and DEST. Its timings are hard-coded constants in app.js; morph-config.json does not change it.
 
@@ -173,7 +173,7 @@ History: [fbf3605](https://github.com/tas-fdnxt/portaboom-qr/commit/fbf3605ad5fc
 
 ## morph3 - full-screen QR, shimmer, glide
 
-Live: https://tas-fdnxt.github.io/portaboom-qr/?v=morph3  |  File: [`app3.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app3.js) (6815 lines, copy of `app.js`)  |  Fallback video: `morph3.mp4`  |  Settings: `morph-config.json` sections `assembly`, `boom`, `camera`, `colours`, `dest`, `fill`, `flight`, `lift`, `lights`, `morph_end_s`, `resolve`, `scan`
+Live: https://portaboom-qr.vercel.app/?v=morph3  |  File: [`app3.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app3.js) (6815 lines, copy of `app.js`)  |  Fallback video: `morph3.mp4`  |  Settings: `morph-config.json` sections `assembly`, `boom`, `camera`, `colours`, `dest`, `fill`, `flight`, `lift`, `lights`, `morph_end_s`, `resolve`, `scan`
 
 morph2 made editable: every timing, camera and colour comes from morph-config.json. Adds the QR growing to fill the screen, the shimmer light-wave resolve with a glowing ring and lens flash, a slow camera glide round the unit, and a wider frame when the boom comes down. Every later version is a copy of this file plus its own code.
 
@@ -237,7 +237,7 @@ History: [1eca1bb](https://github.com/tas-fdnxt/portaboom-qr/commit/1eca1bb0fe1f
 
 ## road - worksite road and traffic
 
-Live: https://tas-fdnxt.github.io/portaboom-qr/?v=road  |  File: [`app-road.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-road.js) (6980 lines, copy of `app3.js`)  |  Fallback video: `road.mp4`  |  Settings: `morph-config.json` sections `assembly`, `boom`, `camera`, `colours`, `dest`, `fill`, `flight`, `lift`, `lights`, `morph_end_s`, `resolve`, `road`, `scan`
+Live: https://portaboom-qr.vercel.app/?v=road  |  File: [`app-road.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-road.js) (6980 lines, copy of `app3.js`)  |  Fallback video: `road.mp4`  |  Settings: `morph-config.json` sections `assembly`, `boom`, `camera`, `colours`, `dest`, `fill`, `flight`, `lift`, `lights`, `morph_end_s`, `resolve`, `road`, `scan`
 
 morph3 plus a procedural worksite (road, kerbs, trees, cone taper, A-frame signs, parked ute, traffic controllers, 4 queued cars) built outward from the unit as the QR tiles sink into asphalt. The boom lowers, waits and rises, then the cars leave on green, amber, red, boom down with the next car stopping.
 
@@ -290,7 +290,7 @@ History: [43c1729](https://github.com/tas-fdnxt/portaboom-qr/commit/43c1729a12e5
 
 ## minions - crowd of little PORTABOOMs
 
-Live: https://tas-fdnxt.github.io/portaboom-qr/?v=minions  |  File: [`app-minions.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-minions.js) (7293 lines, copy of `app3.js`)  |  Fallback video: `minions.mp4`  |  Settings: `morph-config.json` sections `assembly`, `boom`, `camera`, `colours`, `dest`, `fill`, `flight`, `lift`, `lights`, `minions`, `morph_end_s`, `resolve`, `scan`
+Live: https://portaboom-qr.vercel.app/?v=minions  |  File: [`app-minions.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-minions.js) (7293 lines, copy of `app3.js`)  |  Fallback video: `minions.mp4`  |  Settings: `morph-config.json` sections `assembly`, `boom`, `camera`, `colours`, `dest`, `fill`, `flight`, `lift`, `lights`, `minions`, `morph_end_s`, `resolve`, `scan`
 
 morph3 plus ~60 little PORTABOOMs popping out of dark QR modules lying on their backs, standing up, bobbing, running their own light and boom cycles, ducking out of the camera's way and lining up in rows behind the hero to follow its lights and boom.
 
@@ -339,7 +339,7 @@ History: [d32c777](https://github.com/tas-fdnxt/portaboom-qr/commit/d32c777064d4
 
 ## minions2 - crowd fills the whole floor
 
-Live: https://tas-fdnxt.github.io/portaboom-qr/?v=minions2  |  File: [`app-minions.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-minions.js) (7293 lines, copy of `app3.js`)  |  Fallback video: `minions2.mp4`  |  Settings: `morph-config.json` sections `assembly`, `boom`, `camera`, `colours`, `dest`, `fill`, `flight`, `lift`, `lights`, `minions`, `minions2`, `morph_end_s`, `resolve`, `scan`
+Live: https://portaboom-qr.vercel.app/?v=minions2  |  File: [`app-minions.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-minions.js) (7293 lines, copy of `app3.js`)  |  Fallback video: `minions2.mp4`  |  Settings: `morph-config.json` sections `assembly`, `boom`, `camera`, `colours`, `dest`, `fill`, `flight`, `lift`, `lights`, `minions`, `minions2`, `morph_end_s`, `resolve`, `scan`
 
 Same file as minions with minions2Mode on: ~220 minis cover the whole visible floor from the horizon to the bottom edge, keep the whole hero clear, and follow the hero's lights and boom in a ripple outward.
 
@@ -396,7 +396,7 @@ History: [42ffb75](https://github.com/tas-fdnxt/portaboom-qr/commit/42ffb7581dc8
 
 ## night - city lights and wet road
 
-Live: https://tas-fdnxt.github.io/portaboom-qr/?v=night  |  File: [`app-night.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-night.js) (7315 lines, copy of `app3.js`)  |  Fallback video: `night.mp4`  |  Settings: `morph-config.json` sections `assembly`, `boom`, `camera`, `colours`, `dest`, `fill`, `flight`, `lift`, `lights`, `morph_end_s`, `night`, `resolve`, `scan`
+Live: https://portaboom-qr.vercel.app/?v=night  |  File: [`app-night.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-night.js) (7315 lines, copy of `app3.js`)  |  Fallback video: `night.mp4`  |  Settings: `morph-config.json` sections `assembly`, `boom`, `camera`, `colours`, `dest`, `fill`, `flight`, `lift`, `lights`, `morph_end_s`, `night`, `resolve`, `scan`
 
 morph3 plus a fade to night: the QR modules glow like city windows, the modules fly in as glowing cubes, a wet asphalt strip spreads in front of the unit and the lenses and cabinet flashers light it with coloured washes and streak reflections.
 
@@ -449,7 +449,7 @@ History: [2281859](https://github.com/tas-fdnxt/portaboom-qr/commit/2281859189ce
 
 ## blueprint - drawing to wireframe to unit
 
-Live: https://tas-fdnxt.github.io/portaboom-qr/?v=blueprint  |  File: [`app-blueprint.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-blueprint.js) (7393 lines, copy of `app3.js`)  |  Fallback video: `blueprint.mp4`  |  Settings: `morph-config.json` sections `blueprint`, `boom`, `camera`, `colours`, `dest`, `fill`, `lights`, `resolve`, `scan`
+Live: https://portaboom-qr.vercel.app/?v=blueprint  |  File: [`app-blueprint.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-blueprint.js) (7393 lines, copy of `app3.js`)  |  Fallback video: `blueprint.mp4`  |  Settings: `morph-config.json` sections `blueprint`, `boom`, `camera`, `colours`, `dest`, `fill`, `lights`, `resolve`, `scan`
 
 morph3 with the flight replaced: the QR inverts into a blue blueprint sheet with dimensioned drawings measured from the GLB, the front elevation draws itself, lifts off as a glowing wireframe and stands up, then the real unit scans in part by part (cabinet, head, lenses, boom, wheels).
 
@@ -490,7 +490,7 @@ History: [4e7952a](https://github.com/tas-fdnxt/portaboom-qr/commit/4e7952a687b7
 
 ## rain - cubes rain down and stack
 
-Live: https://tas-fdnxt.github.io/portaboom-qr/?v=rain  |  File: [`app-rain.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-rain.js) (7075 lines, copy of `app3.js`)  |  Fallback video: `rain.mp4`  |  Settings: `morph-config.json` sections `assembly`, `boom`, `camera`, `colours`, `dest`, `fill`, `lift`, `lights`, `morph_end_s`, `rain`, `resolve`, `scan`
+Live: https://portaboom-qr.vercel.app/?v=rain  |  File: [`app-rain.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-rain.js) (7075 lines, copy of `app3.js`)  |  Fallback video: `rain.mp4`  |  Settings: `morph-config.json` sections `assembly`, `boom`, `camera`, `colours`, `dest`, `fill`, `lift`, `lights`, `morph_end_s`, `rain`, `resolve`, `scan`
 
 morph3 with the flight replaced: modules shoot up out of frame, orange and navy cubes fall back on ballistic paths, bounce into their voxel slots and stack bottom-up; the shimmer resolves the unit later than morph3; a dust puff and camera shake when the boom lands.
 
@@ -533,7 +533,7 @@ History: [74ff5ac](https://github.com/tas-fdnxt/portaboom-qr/commit/74ff5ac57141
 
 ## domino - topple and guard of honour
 
-Live: https://tas-fdnxt.github.io/portaboom-qr/?v=domino  |  File: [`app-domino.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-domino.js) (7632 lines, copy of `app-minions.js`)  |  Fallback video: `domino.mp4`  |  Settings: `morph-config.json` sections `assembly`, `boom`, `camera`, `colours`, `dest`, `domino`, `fill`, `flight`, `lift`, `lights`, `morph_end_s`, `resolve`, `scan`
+Live: https://portaboom-qr.vercel.app/?v=domino  |  File: [`app-domino.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-domino.js) (7632 lines, copy of `app-minions.js`)  |  Fallback video: `domino.mp4`  |  Settings: `morph-config.json` sections `assembly`, `boom`, `camera`, `colours`, `dest`, `domino`, `fill`, `flight`, `lift`, `lights`, `morph_end_s`, `resolve`, `scan`
 
 Built from the minions file. The full-screen QR topples like dominoes from the corners to the middle; along an aisle the fallen modules flip up as rows of little PORTABOOMs; the camera comes down into the aisle and dollies along it while each row salutes; the hero assembles at the end (1.7 s later than morph3) and its boom drop ripples down the rows.
 
@@ -590,7 +590,7 @@ History: [af85a3a](https://github.com/tas-fdnxt/portaboom-qr/commit/af85a3a9bb5d
 
 ## domino2 - topple into a full-floor crowd
 
-Live: https://tas-fdnxt.github.io/portaboom-qr/?v=domino2  |  File: [`app-domino2.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-domino2.js) (7753 lines, copy of `app-domino.js`)  |  Fallback video: `domino2.mp4`  |  Settings: `morph-config.json` sections `assembly`, `boom`, `camera`, `colours`, `dest`, `domino`, `domino2`, `fill`, `flight`, `lift`, `lights`, `morph_end_s`, `resolve`, `scan`
+Live: https://portaboom-qr.vercel.app/?v=domino2  |  File: [`app-domino2.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-domino2.js) (7753 lines, copy of `app-domino.js`)  |  Fallback video: `domino2.mp4`  |  Settings: `morph-config.json` sections `assembly`, `boom`, `camera`, `colours`, `dest`, `domino`, `domino2`, `fill`, `flight`, `lift`, `lights`, `morph_end_s`, `resolve`, `scan`
 
 domino with the straight rows replaced by a ~240-strong crowd covering the whole floor (varied spots, turns and sizes, like minions2). Booms rise in a ripple as the camera glides through; the hero stays clear; the boom drop ripples back out.
 
@@ -647,7 +647,7 @@ History: [f299987](https://github.com/tas-fdnxt/portaboom-qr/commit/f2999871290a
 
 ## drone - top-down worksite then swoop
 
-Live: https://tas-fdnxt.github.io/portaboom-qr/?v=drone  |  File: [`app-drone.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-drone.js) (7184 lines, copy of `app-road.js`)  |  Fallback video: `drone.mp4`  |  Settings: `morph-config.json` sections `assembly`, `boom`, `camera`, `colours`, `dest`, `drone`, `fill`, `flight`, `lights`, `morph_end_s`, `resolve`, `road`, `scan`
+Live: https://portaboom-qr.vercel.app/?v=drone  |  File: [`app-drone.js`](https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-drone.js) (7184 lines, copy of `app-road.js`)  |  Fallback video: `drone.mp4`  |  Settings: `morph-config.json` sections `assembly`, `boom`, `camera`, `colours`, `dest`, `drone`, `fill`, `flight`, `lights`, `morph_end_s`, `resolve`, `road`, `scan`
 
 Built from the road file. The camera rises to a top-down drone view, the QR turns tile by tile into the worksite seen from above, the hero assembles on the road, then one long banked swoop brings the camera down to road's eye-level shot and road's traffic cycle runs.
 

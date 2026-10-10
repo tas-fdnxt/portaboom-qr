@@ -2,7 +2,7 @@
  "title": "PORTABOOM QR morph recipe",
  "code_commit_date": "2026-10-10T03:35:01+11:00",
  "repo": "https://github.com/tas-fdnxt/portaboom-qr",
- "pages": "https://tas-fdnxt.github.io/portaboom-qr/",
+ "pages": "https://portaboom-qr.vercel.app/",
  "code_commit": "f2999871290a523c022ea07e04693d982b3e8aa6",
  "code_commit_short": "f299987",
  "how_to_read": "BUILD nodes are how the assets were made (once, off the phone). RUNTIME nodes are what plays on the phone, in order. Each version is a path through the shared RUNTIME nodes plus its own. Every code reference is a GitHub link pinned to the commit the line numbers were read from. Keys are paths in morph-config.json (morph3 and later only).",
@@ -589,7 +589,7 @@
      "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/d915c5a7997bf250f1d1911b261f2b1bbc5992f6"
     }
    ],
-   "live": "https://tas-fdnxt.github.io/portaboom-qr/?v=morph1",
+   "live": "https://portaboom-qr.vercel.app/?v=morph1",
    "file_url": "https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app.js",
    "file_lines": 6346,
    "parent_file": null,
@@ -1194,7 +1194,7 @@
      "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/b55f87e383b131851794fefaac0dade3c0b8b3aa"
     }
    ],
-   "live": "https://tas-fdnxt.github.io/portaboom-qr/?v=morph2",
+   "live": "https://portaboom-qr.vercel.app/?v=morph2",
    "file_url": "https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app.js",
    "file_lines": 6346,
    "parent_file": null,
@@ -2046,7 +2046,7 @@
      "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/b55f87e383b131851794fefaac0dade3c0b8b3aa"
     }
    ],
-   "live": "https://tas-fdnxt.github.io/portaboom-qr/?v=morph3",
+   "live": "https://portaboom-qr.vercel.app/?v=morph3",
    "file_url": "https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app3.js",
    "file_lines": 6815,
    "parent_file": "app.js",
@@ -3135,7 +3135,7 @@
      "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/418008164d3382951b9bbc06f89abad42c539096"
     }
    ],
-   "live": "https://tas-fdnxt.github.io/portaboom-qr/?v=road",
+   "live": "https://portaboom-qr.vercel.app/?v=road",
    "file_url": "https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-road.js",
    "file_lines": 6980,
    "parent_file": "app3.js",
@@ -4140,7 +4140,7 @@
      "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/3d27f3908a31f9d888986204a99738d575eab625"
     }
    ],
-   "live": "https://tas-fdnxt.github.io/portaboom-qr/?v=minions",
+   "live": "https://portaboom-qr.vercel.app/?v=minions",
    "file_url": "https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-minions.js",
    "file_lines": 7293,
    "parent_file": "app3.js",
@@ -5232,7 +5232,7 @@
      "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/91517b74f1c028459b3193894a96b22bc25a3e7d"
     }
    ],
-   "live": "https://tas-fdnxt.github.io/portaboom-qr/?v=minions2",
+   "live": "https://portaboom-qr.vercel.app/?v=minions2",
    "file_url": "https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-minions.js",
    "file_lines": 7293,
    "parent_file": "app3.js",
@@ -6305,7 +6305,7 @@
      "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/2281859189ce16729ca19856a1666c59ccb25892"
     }
    ],
-   "live": "https://tas-fdnxt.github.io/portaboom-qr/?v=night",
+   "live": "https://portaboom-qr.vercel.app/?v=night",
    "file_url": "https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-night.js",
    "file_lines": 7315,
    "parent_file": "app3.js",
@@ -7097,7 +7097,7 @@
      "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/4e7952a687b7b5252425d813d4cd8ec2c1056384"
     }
    ],
-   "live": "https://tas-fdnxt.github.io/portaboom-qr/?v=blueprint",
+   "live": "https://portaboom-qr.vercel.app/?v=blueprint",
    "file_url": "https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-blueprint.js",
    "file_lines": 7393,
    "parent_file": "app3.js",
@@ -8030,7 +8030,7 @@
      "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/74ff5ac571411498d3e7cd01e5e4f68bf722bc2b"
     }
    ],
-   "live": "https://tas-fdnxt.github.io/portaboom-qr/?v=rain",
+   "live": "https://portaboom-qr.vercel.app/?v=rain",
    "file_url": "https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-rain.js",
    "file_lines": 7075,
    "parent_file": "app3.js",
@@ -9081,7 +9081,7 @@
      "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/af85a3a9bb5d542b0308d14c881f9bb5b6a51162"
     }
    ],
-   "live": "https://tas-fdnxt.github.io/portaboom-qr/?v=domino",
+   "live": "https://portaboom-qr.vercel.app/?v=domino",
    "file_url": "https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-domino.js",
    "file_lines": 7632,
    "parent_file": "app-minions.js",
@@ -10143,7 +10143,7 @@
      "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/f2999871290a523c022ea07e04693d982b3e8aa6"
     }
    ],
-   "live": "https://tas-fdnxt.github.io/portaboom-qr/?v=domino2",
+   "live": "https://portaboom-qr.vercel.app/?v=domino2",
    "file_url": "https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-domino2.js",
    "file_lines": 7753,
    "parent_file": "app-domino.js",
@@ -11309,7 +11309,7 @@
      "url": "https://github.com/tas-fdnxt/portaboom-qr/commit/ac84a019b2b0f97347a590491b27d6a265cb90cf"
     }
    ],
-   "live": "https://tas-fdnxt.github.io/portaboom-qr/?v=drone",
+   "live": "https://portaboom-qr.vercel.app/?v=drone",
    "file_url": "https://github.com/tas-fdnxt/portaboom-qr/blob/f2999871290a523c022ea07e04693d982b3e8aa6/app-drone.js",
    "file_lines": 7184,
    "parent_file": "app-road.js",
@@ -11429,7 +11429,7 @@
    "label": "QR encode: URL + art into one code",
    "purpose": "Encode the tip URL at error correction H, version 13 (69x69), pick mask 6, place the art at row 11 / col 8 with a one-module light halo, keep finder/timing/alignment/format cells as real QR. Writes the print still (PNG + SVG).",
    "change": [
-    "To change where the printed QR sends people: the URL is the --url argument of make-morph2-qr.mjs (default https://tas-fdnxt.github.io/portaboom-qr/?v=morph2). The runtime draws its frame 0 from './?v=morph2' (MORPH1_TIP_URL), so if you print a different URL the page's frame 0 must be updated to match or frame 0 will not equal the still.",
+    "To change where the printed QR sends people: the URL is the --url argument of make-morph2-qr.mjs (default https://portaboom-qr.vercel.app/?v=morph2). The runtime draws its frame 0 from './?v=morph2' (MORPH1_TIP_URL), so if you print a different URL the page's frame 0 must be updated to match or frame 0 will not equal the still.",
     "Every version (morph3, road, minions...) draws this same morph2 code on frame 0; the ?v= in the link only picks which animation runs.",
     "Art colours for the print are ART_COLORS in morph2-art.js (cabinet orange #F28C28, lenses, boom red)."
    ],
@@ -11675,7 +11675,7 @@
    "label": "Settings file + editor",
    "purpose": "morph-config.json holds every tunable number and colour for morph3 and later versions (one section per version on top of the shared ones). editor.html shows a live phone preview (?editor=1 clock), sliders, step markers and Copy JSON / Download. Precedence: built-in defaults < morph-config.json < ?config=<url> < browser-saved edits.",
    "change": [
-    "To change a version for everyone: edit the value in the editor, Download, replace morph-config.json, commit. It is live as soon as Pages redeploys (no build step).",
+    "To change a version for everyone: edit the value in the editor, Download, replace morph-config.json, commit. It is live as soon as Vercel redeploys (automatic on every push, no build step).",
     "morph1 and morph2 (the site root) ignore this file; their numbers are constants in app.js."
    ],
    "versions_note": "morph3 and later",
@@ -11874,8 +11874,8 @@
   {
    "id": "b_publish",
    "group": "build",
-   "label": "Publish to GitHub Pages",
-   "purpose": "Commit to main; GitHub Pages serves https://tas-fdnxt.github.io/portaboom-qr/. Every asset URL carries a ?b=<hash> cache-buster so phones get the new file, then the live URLs are checked for HTTP 200.",
+   "label": "Publish (Vercel)",
+   "purpose": "Commit to main; Vercel (linked to the private repo, auto-deploys on push) serves https://portaboom-qr.vercel.app/. Every asset URL carries a ?b=<hash> cache-buster so phones get the new file, then the live URLs are checked for HTTP 200.",
    "change": [
     "When you change an app file, bump its ?b= value in index.html, or phones may keep the old copy."
    ],

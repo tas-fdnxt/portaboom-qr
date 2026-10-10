@@ -8,10 +8,10 @@
 <title>PORTABOOM QR</title>
 <meta property="og:title" content="PORTABOOM QR">
 <meta property="og:description" content="Scan the PORTABOOM QR and watch its modules build the PB4000.">
-<meta property="og:image" content="https://tas-fdnxt.github.io/portaboom-qr/portaboom-morph2-qr.png">
+<meta property="og:image" content="https://portaboom-qr.vercel.app/portaboom-morph2-qr.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://tas-fdnxt.github.io/portaboom-qr/portaboom-morph2-qr.png">
+<meta name="twitter:image" content="https://portaboom-qr.vercel.app/portaboom-morph2-qr.png">
 <style>
 :root{
   --soft:#101317; --paper:#FFFFFF; --ink:#F4F6F9; --ink-soft:#C5CAD3;
@@ -109,7 +109,7 @@ body.morph1.morph1-scanning #morph1ScanFx{display:block}
   const DEFAULT_V = "morph2";
   const v = new URLSearchParams(location.search).get("v") || DEFAULT_V;
   const img = document.getElementById("morph1Still");
-  if (img) img.src = v === "morph2" || v === "morph3" || v === "road" || v === "minions" || v === "minions2" || v === "rain" || v === "blueprint" || v === "night" || v === "domino" || v === "domino2" || v === "drone" ? "./portaboom-morph2-qr.png?b=b034e56e" : "./portaboom-morph-qr.png?b=b034e56e";
+  if (img) img.src = v === "morph2" || v === "morph3" || v === "road" || v === "minions" || v === "minions2" || v === "rain" || v === "blueprint" || v === "night" || v === "domino" || v === "domino2" || v === "drone" ? "./portaboom-morph2-qr.png?b=v2vercel" : "./portaboom-morph-qr.png?b=v2vercel";
 })();
 </script>
 <button id="morph1Scan" type="button" aria-label="Tap to scan the PORTABOOM QR code"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3M6 12h12"/></svg><span>Tap to scan</span></button>

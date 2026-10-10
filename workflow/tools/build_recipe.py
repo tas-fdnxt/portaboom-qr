@@ -9,7 +9,7 @@ import jsfuncs, keyuse, recipe_spec as S, key_notes
 REPO = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "..", ".."))
 OUT = os.path.join(REPO, "workflow")
 GH = "https://github.com/tas-fdnxt/portaboom-qr"
-PAGES = "https://tas-fdnxt.github.io/portaboom-qr/"
+PAGES = "https://portaboom-qr.vercel.app/"
 def git(*a): return subprocess.check_output(["git", "-C", REPO, *a], text=True).strip()
 # Pin to the last commit that touched code (not workflow/), so links match the line numbers.
 COMMIT = git("log", "-1", "--format=%H", "--", ".", ":(exclude)workflow")

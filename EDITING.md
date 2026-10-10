@@ -4,7 +4,7 @@ All the timings, camera moves and colours of the morph3 version live in one file
 
 ## 1. Open the editor
 
-Open https://tas-fdnxt.github.io/portaboom-qr/editor.html on a laptop (it also works on a tablet).
+Open https://portaboom-qr.vercel.app/editor.html on a laptop (it also works on a tablet).
 
 - Left: a live phone preview of the sequence.
 - Right: every setting, grouped (Scan, QR fills the screen, Lift wave, Flight, Assembly, Blocks to real unit, Camera, Light cycle, Boom, Colours, DEST link).
@@ -35,7 +35,7 @@ Useful settings:
 - Blueprint (only used by ?v=blueprint; pick "blueprint" in the editor's Version menu): `invert_start_s` and `invert_s` (when and how fast the QR turns into blue paper), `paper_alpha` (how much of the QR shows through the paper), `label_size` (size of the writing on the sheet), `draw_start_s` and `draw_s` (when the drawing sketches itself), `lift_start_s`, `lift_s` and `lift_height_cells` (when the wireframe lifts off the paper and stands up, and how high it floats), `wire_glow`, `fill_cabinet_s`, `fill_head_s`, `fill_lenses_s`, `fill_boom_s`, `fill_wheels_s` and `fill_part_s` (when each part of the real unit scans in, and how long each takes), `scan_glow` (the scan ring), `flash` (how much a freshly filled part glows), `wire_fade_start_s`, `wire_fade_s` and `wire_fill_fade` (when the wireframe goes), `ink_fade_start_s` and `ink_fade_s` (when the drawings fade off the paper), and the blueprint colours. The measurements on the sheet are read from the 3D model, not typed in. `base` holds this version's own changes to the shared timing.
 - Rain (only used by ?v=rain; pick "rain" in the editor's Version menu): `shoot_start_s`, `shoot_spread_s` and `shoot_speed` (the QR squares shooting up), `rain_start_s` and `rain_s` (when the cubes start falling and how long the downpour lasts), `drop_height` and `gravity` (how far they fall and how fast), `drift` and `tumble` (sideways drift and spin while falling), `layer_mix` (how strictly it stacks bottom up), `bounce_cells`, `bounce_hz`, `bounce_damping` and `settle_s` (the bounce when a cube lands), `dust`, `dust_count`, `dust_size` and `dust_s` (the dust puff when the boom comes down), `shake` and `shake_s` (the little camera shake), and the colours. `base` holds this version's own changes to the shared timing (a later resolve and glide so the stack finishes first).
 
-The page starts on its own (no button), and so does the preview. To get the old "Tap to scan" button for testing, add `&test=1` to the page link, for example https://tas-fdnxt.github.io/portaboom-qr/?v=morph3&test=1.
+The page starts on its own (no button), and so does the preview. To get the old "Tap to scan" button for testing, add `&test=1` to the page link, for example https://portaboom-qr.vercel.app/?v=morph3&test=1.
 
 ## 3. Export
 
@@ -47,7 +47,7 @@ The page starts on its own (no button), and so does the preview. To get the old 
 1. Go to the repository on GitHub: https://github.com/tas-fdnxt/portaboom-qr
 2. Open `morph-config.json`, click the pencil (Edit), select all, paste your copied settings (or use "Add file > Upload files" and upload the downloaded file).
 3. Commit the change to `main`.
-4. GitHub Pages republishes in a minute or two. Open https://tas-fdnxt.github.io/portaboom-qr/?v=morph3 to see it.
+4. Vercel redeploys automatically in under a minute. Open https://portaboom-qr.vercel.app/?v=morph3 to see it.
 
 To try a settings file without publishing it, add `&config=<link to a JSON file>` to the page link.
 
